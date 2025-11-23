@@ -50,9 +50,29 @@ export default function Upload() {
       return;
     }
 
+    // Validate file size (500MB limit)
+    const maxSize = 500 * 1024 * 1024; // 500MB
+    if (videoFile.size > maxSize) {
+      toast({
+        title: "Video quá lớn",
+        description: "Vui lòng chọn video nhỏ hơn 500MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUploading(true);
     setUploadProgress(0);
     setUploadStage("Đang chuẩn bị...");
+
+    // Simulated progress updater
+    let simulatedProgress = 0;
+    const progressInterval = setInterval(() => {
+      simulatedProgress += 1;
+      if (simulatedProgress <= 60) {
+        setUploadProgress(10 + simulatedProgress);
+      }
+    }, 100);
 
     try {
       // Step 1: Get or create channel (5% progress)
@@ -96,16 +116,14 @@ export default function Upload() {
         .substring(0, 100);
       const videoPath = `${user.id}/${Date.now()}-${sanitizedVideoName}`;
       
-      // Upload video in chunks for better progress tracking
-      const chunkSize = 1024 * 1024; // 1MB chunks
-      const chunks = Math.ceil(videoFile.size / chunkSize);
-      
       const { error: videoUploadError } = await supabase.storage
         .from("videos")
         .upload(videoPath, videoFile, {
           cacheControl: '3600',
           upsert: false
         });
+
+      clearInterval(progressInterval);
 
       if (videoUploadError) {
         console.error("Video upload error:", videoUploadError);
@@ -175,6 +193,7 @@ export default function Upload() {
         navigate("/");
       }, 1000);
     } catch (error: any) {
+      clearInterval(progressInterval);
       console.error("Upload error:", error);
       toast({
         title: "Tải lên thất bại",
@@ -203,13 +222,17 @@ export default function Upload() {
               {videoFile ? (
                 <div className="space-y-4">
                   <Video className="h-16 w-16 mx-auto text-primary" />
-                  <p className="text-sm text-foreground">{videoFile.name}</p>
+                  <p className="text-sm text-foreground font-medium">{videoFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Kích thước: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                  </p>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setVideoFile(null)}
+                    disabled={uploading}
                   >
-                    Change Video
+                    Đổi Video
                   </Button>
                 </div>
               ) : (
@@ -228,7 +251,7 @@ export default function Upload() {
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    MP4, WebM, or AVI (max 10GB)
+                    MP4, WebM, hoặc AVI (tối đa 500MB)
                   </p>
                 </div>
               )}
