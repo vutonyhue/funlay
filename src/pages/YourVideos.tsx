@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Edit, Trash2, EyeOff } from "lucide-react";
+import { Edit, Trash2, EyeOff, Video } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -114,71 +114,77 @@ const YourVideos = () => {
           </div>
 
           {videos.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">Bạn chưa có video nào</p>
-              <Button onClick={() => navigate("/upload")}>
-                Tải video đầu tiên
+            <div className="text-center py-12 bg-card rounded-lg border-2 border-dashed border-border">
+              <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4 text-lg">Bạn chưa có video nào</p>
+              <Button onClick={() => navigate("/upload")} size="lg" className="font-bold">
+                ➕ Tải video đầu tiên
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {videos.map((video) => (
                 <div
                   key={video.id}
-                  className="bg-card border border-border rounded-lg p-6 flex items-start gap-6"
+                  className="bg-card border-2 border-border rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow"
                 >
-                  {video.thumbnail_url && (
-                    <img
-                      src={video.thumbnail_url}
-                      alt={video.title}
-                      className="w-40 h-24 object-cover rounded flex-shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-xl mb-2 text-foreground">{video.title}</h3>
-                    {video.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {video.description}
-                      </p>
+                  <div className="flex items-center gap-6">
+                    {/* Thumbnail */}
+                    {video.thumbnail_url && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={video.thumbnail_url}
+                          alt={video.title}
+                          className="w-48 h-28 object-cover rounded-lg border-2 border-border"
+                        />
+                      </div>
                     )}
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <span>{video.view_count || 0} lượt xem</span>
-                      <span>•</span>
-                      <span>0 thích</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        Công khai
-                      </span>
+                    
+                    {/* Video Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-2xl mb-3 text-foreground">{video.title}</h3>
+                      {video.description && (
+                        <p className="text-base text-muted-foreground mb-3 line-clamp-2">
+                          {video.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-base text-muted-foreground">
+                        <span className="font-semibold">{video.view_count || 0} lượt xem</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                          <span className="font-semibold text-green-600">Công khai</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-3 flex-shrink-0">
-                    <Button
-                      variant="default"
-                      size="lg"
-                      onClick={() => navigate(`/edit-video/${video.id}`)}
-                      className="gap-3 min-w-[140px] justify-start bg-blue-600 text-white hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-bold text-base border-2 border-blue-700 shadow-lg"
-                    >
-                      <Edit className="h-6 w-6" />
-                      SỬA
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="gap-3 min-w-[140px] justify-start border-3 border-gray-400 hover:bg-hover-yellow hover:text-primary hover:border-hover-yellow transition-all duration-300 font-bold text-base shadow-lg bg-white text-gray-700"
-                    >
-                      <EyeOff className="h-6 w-6" />
-                      ẨN
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="lg"
-                      onClick={() => setDeleteVideoId(video.id)}
-                      className="gap-3 min-w-[140px] justify-start bg-red-600 text-white hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-bold text-base border-2 border-red-700 shadow-lg"
-                    >
-                      <Trash2 className="h-6 w-6" />
-                      XÓA
-                    </Button>
+
+                    {/* Action Buttons - ALWAYS VISIBLE */}
+                    <div className="flex flex-col gap-3 flex-shrink-0 ml-4">
+                      <Button
+                        onClick={() => navigate(`/edit-video/${video.id}`)}
+                        size="lg"
+                        className="gap-3 min-w-[160px] h-12 justify-center bg-green-600 text-white hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-extrabold text-lg border-3 border-green-700 shadow-xl"
+                      >
+                        <Edit className="h-6 w-6" />
+                        SỬA
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="gap-3 min-w-[160px] h-12 justify-center border-3 border-gray-500 hover:bg-hover-yellow hover:text-primary hover:border-hover-yellow transition-all duration-300 font-extrabold text-lg shadow-xl bg-white text-gray-800"
+                      >
+                        <EyeOff className="h-6 w-6" />
+                        ẨN
+                      </Button>
+                      <Button
+                        onClick={() => setDeleteVideoId(video.id)}
+                        size="lg"
+                        className="gap-3 min-w-[160px] h-12 justify-center bg-red-600 text-white hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-extrabold text-lg border-3 border-red-700 shadow-xl"
+                      >
+                        <Trash2 className="h-6 w-6" />
+                        XÓA
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
