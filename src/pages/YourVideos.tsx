@@ -154,26 +154,26 @@ const YourVideos = () => {
                       variant="default"
                       size="sm"
                       onClick={() => navigate(`/edit-video/${video.id}`)}
-                      className="gap-2 min-w-[100px] justify-start bg-blue-600 hover:bg-yellow-400 hover:text-black transition-colors"
+                      className="gap-2 min-w-[120px] justify-start bg-primary text-primary-foreground hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-semibold"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-5 w-5" />
                       Sửa
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 min-w-[100px] justify-start hover:bg-yellow-400 hover:text-black hover:border-yellow-400 transition-colors"
+                      className="gap-2 min-w-[120px] justify-start border-2 hover:bg-hover-yellow hover:text-primary hover:border-hover-yellow transition-all duration-300 font-semibold"
                     >
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="h-5 w-5" />
                       Ẩn
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => setDeleteVideoId(video.id)}
-                      className="gap-2 min-w-[100px] justify-start bg-red-600 hover:bg-yellow-400 hover:text-black transition-colors"
+                      className="gap-2 min-w-[120px] justify-start bg-destructive text-destructive-foreground hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-semibold"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-5 w-5" />
                       Xóa
                     </Button>
                   </div>

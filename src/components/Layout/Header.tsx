@@ -54,7 +54,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-2 cursor-pointer hover:bg-hover-yellow hover:text-black rounded-lg px-3 py-2 transition-all duration-300" onClick={() => navigate("/")}>
+        <div className="flex items-center gap-2 cursor-pointer hover:bg-hover-yellow hover:text-primary rounded-lg px-3 py-2 transition-all duration-300" onClick={() => navigate("/")}>
           <div className="bg-logo-bg rounded-md px-2 py-1.5 flex items-center justify-center shadow-lg">
             <Play className="h-7 w-7 text-white fill-white" />
           </div>
