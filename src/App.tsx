@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ProfileSettings from "./pages/ProfileSettings";
+import Upload from "./pages/Upload";
+import Watch from "./pages/Watch";
+import Channel from "./pages/Channel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +23,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/settings" element={<ProfileSettings />} />
+          <Route path="/upload" element={<Upload />} />
+          <Route path="/watch/:id" element={<Watch />} />
+          <Route path="/channel/:id" element={<Channel />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

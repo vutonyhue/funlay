@@ -1,4 +1,4 @@
-import { Search, Upload, Bell, Menu, Play, User as UserIcon, LogOut, Settings } from "lucide-react";
+import { Search, Video, Bell, Menu, Play, User as UserIcon, LogOut, Settings, Radio, SquarePen, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiTokenWallet } from "@/components/Web3/MultiTokenWallet";
@@ -33,13 +33,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-          <div className="flex items-center gap-2 bg-logo-bg px-3 py-1.5 rounded-lg shadow-lg">
-            <Play className="h-6 w-6 text-white fill-white" />
-            <div className="text-xl font-bold text-fun-yellow">
-              FUN PLAY
-            </div>
+        <div className="flex items-center gap-1 cursor-pointer" onClick={() => navigate("/")}>
+          <div className="bg-[#FF0000] rounded-md px-2 py-1 flex items-center justify-center">
+            <Play className="h-5 w-5 text-white fill-white" />
           </div>
+          <span className="text-xl font-bold text-foreground tracking-tight">
+            FUN<span className="text-muted-foreground font-normal">PLAY</span>
+          </span>
         </div>
       </div>
 
@@ -64,9 +64,31 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       {/* Right section */}
       <div className="flex items-center gap-2">
         <MultiTokenWallet />
-        <Button variant="ghost" size="icon" className="hidden md:flex">
-          <Upload className="h-5 w-5" />
-        </Button>
+        
+        {user && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="hidden md:flex">
+                <Plus className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => navigate("/upload")}>
+                <Video className="mr-2 h-4 w-4" />
+                Tải video lên
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Radio className="mr-2 h-4 w-4" />
+                Phát trực tiếp
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <SquarePen className="mr-2 h-4 w-4" />
+                Tạo bài đăng
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
         <Button variant="ghost" size="icon" className="hidden md:flex">
           <Bell className="h-5 w-5" />
         </Button>

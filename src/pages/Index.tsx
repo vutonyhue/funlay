@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Layout/Header";
 import { Sidebar } from "@/components/Layout/Sidebar";
+import { CategoryChips } from "@/components/Layout/CategoryChips";
 import { VideoCard } from "@/components/Video/VideoCard";
 import { TipModal } from "@/components/Tipping/TipModal";
 import { useToast } from "@/hooks/use-toast";
@@ -76,6 +77,7 @@ const Index = () => {
       
       {/* Main content */}
       <main className="pt-14 lg:pl-64">
+        <CategoryChips />
         {!user && (
           <div className="bg-primary/10 border-b border-primary/20 p-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
