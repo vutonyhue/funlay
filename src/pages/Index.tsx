@@ -7,6 +7,7 @@ import { TipModal } from "@/components/Tipping/TipModal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -26,13 +27,33 @@ const Index = () => {
     timestamp: `${Math.floor(Math.random() * 12 + 1)} days ago`,
   }));
 
-  const handleTip = (videoId: number, channel: string) => {
+  const handleTip = async (videoId: number, channel: string) => {
     if (!user) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to tip creators",
       });
       navigate("/auth");
+      return;
+    }
+    
+    // Check if user has set their wallet address
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("wallet_address")
+      .eq("id", user.id)
+      .maybeSingle();
+    
+    if (!profile?.wallet_address) {
+      toast({
+        title: "Wallet Not Set",
+        description: "Please set your wallet address in settings first",
+        action: (
+          <Button variant="outline" size="sm" onClick={() => navigate("/settings")}>
+            Go to Settings
+          </Button>
+        ),
+      });
       return;
     }
     

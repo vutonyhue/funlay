@@ -1,4 +1,4 @@
-import { Search, Upload, Bell, Menu, Play, User as UserIcon, LogOut } from "lucide-react";
+import { Search, Upload, Bell, Menu, Play, User as UserIcon, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MultiTokenWallet } from "@/components/Web3/MultiTokenWallet";
@@ -87,6 +87,11 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 <UserIcon className="mr-2 h-4 w-4" />
                 Your Channel
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
