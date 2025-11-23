@@ -118,36 +118,43 @@ const YourVideos = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="space-y-4">
               {videos.map((video) => (
                 <div
                   key={video.id}
-                  className="bg-card border border-border rounded-lg p-4 flex gap-4 hover:bg-accent transition-colors"
+                  className="bg-card border border-border rounded-lg p-6 flex items-start gap-6"
                 >
                   {video.thumbnail_url && (
                     <img
                       src={video.thumbnail_url}
                       alt={video.title}
-                      className="w-48 h-27 object-cover rounded"
+                      className="w-40 h-24 object-cover rounded flex-shrink-0"
                     />
                   )}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1">{video.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-xl mb-2 text-foreground">{video.title}</h3>
                     {video.description && (
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                         {video.description}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground">
-                      {video.view_count || 0} lượt xem • {new Date(video.created_at).toLocaleDateString("vi-VN")}
-                    </p>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span>{video.view_count || 0} lượt xem</span>
+                      <span>•</span>
+                      <span>0 thích</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        Công khai
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => navigate(`/edit-video/${video.id}`)}
-                      className="gap-2 bg-green-500/10 border-green-500/20 hover:bg-green-500/20 text-green-600"
+                      className="gap-2 min-w-[100px]"
                     >
                       <Edit className="h-4 w-4" />
                       Sửa
@@ -155,7 +162,7 @@ const YourVideos = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2 bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20 text-yellow-600"
+                      className="gap-2 min-w-[100px]"
                     >
                       <EyeOff className="h-4 w-4" />
                       Ẩn
@@ -164,7 +171,7 @@ const YourVideos = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setDeleteVideoId(video.id)}
-                      className="gap-2 bg-red-500/10 border-red-500/20 hover:bg-red-500/20 text-red-600"
+                      className="gap-2 min-w-[100px] text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="h-4 w-4" />
                       Xóa
