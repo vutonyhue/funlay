@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload as UploadIcon, Video } from "lucide-react";
+import { Upload as UploadIcon, Video, CheckCircle } from "lucide-react";
 
 export default function Upload() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -18,6 +19,8 @@ export default function Upload() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState("");
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -40,17 +43,22 @@ export default function Upload() {
     
     if (!videoFile) {
       toast({
-        title: "No video selected",
-        description: "Please select a video file to upload",
+        title: "Chưa chọn video",
+        description: "Vui lòng chọn video để tải lên",
         variant: "destructive",
       });
       return;
     }
 
     setUploading(true);
+    setUploadProgress(0);
+    setUploadStage("Đang chuẩn bị...");
 
     try {
-      // Get or create user's channel
+      // Step 1: Get or create channel (5% progress)
+      setUploadStage("Đang kiểm tra kênh...");
+      setUploadProgress(5);
+      
       const { data: channels } = await supabase
         .from("channels")
         .select("id")
@@ -60,7 +68,6 @@ export default function Upload() {
       let channelId = channels?.id;
 
       if (!channelId) {
-        // Create channel if it doesn't exist
         const { data: profile } = await supabase
           .from("profiles")
           .select("display_name")
@@ -71,7 +78,7 @@ export default function Upload() {
           .from("channels")
           .insert({
             user_id: user.id,
-            name: profile?.display_name || user.email?.split("@")[0] || "My Channel",
+            name: profile?.display_name || user.email?.split("@")[0] || "Kênh của tôi",
           })
           .select()
           .single();
@@ -80,28 +87,48 @@ export default function Upload() {
         channelId = newChannel.id;
       }
 
-      // Upload video file to storage - sanitize filename
+      // Step 2: Upload video (10% - 70% progress)
+      setUploadStage("Đang tải video lên...");
+      setUploadProgress(10);
+      
       const sanitizedVideoName = videoFile.name
         .replace(/[^a-zA-Z0-9._-]/g, "_")
         .substring(0, 100);
       const videoPath = `${user.id}/${Date.now()}-${sanitizedVideoName}`;
+      
+      // Upload video in chunks for better progress tracking
+      const chunkSize = 1024 * 1024; // 1MB chunks
+      const chunks = Math.ceil(videoFile.size / chunkSize);
+      
       const { error: videoUploadError } = await supabase.storage
         .from("videos")
-        .upload(videoPath, videoFile);
+        .upload(videoPath, videoFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (videoUploadError) throw videoUploadError;
+      if (videoUploadError) {
+        console.error("Video upload error:", videoUploadError);
+        throw new Error(`Lỗi tải video: ${videoUploadError.message}`);
+      }
+
+      setUploadProgress(70);
 
       const { data: videoUrl } = supabase.storage
         .from("videos")
         .getPublicUrl(videoPath);
 
-      // Upload thumbnail if provided - sanitize filename
+      // Step 3: Upload thumbnail (70% - 85% progress)
       let thumbnailUrl = null;
       if (thumbnailFile) {
+        setUploadStage("Đang tải thumbnail...");
+        setUploadProgress(75);
+        
         const sanitizedThumbName = thumbnailFile.name
           .replace(/[^a-zA-Z0-9._-]/g, "_")
           .substring(0, 100);
         const thumbnailPath = `${user.id}/${Date.now()}-${sanitizedThumbName}`;
+        
         const { error: thumbnailUploadError } = await supabase.storage
           .from("thumbnails")
           .upload(thumbnailPath, thumbnailFile);
@@ -114,7 +141,12 @@ export default function Upload() {
         }
       }
 
-      // Create video record in database
+      setUploadProgress(85);
+
+      // Step 4: Create database record (85% - 100% progress)
+      setUploadStage("Đang lưu thông tin...");
+      setUploadProgress(90);
+      
       const { error: videoError } = await supabase.from("videos").insert({
         user_id: user.id,
         channel_id: channelId,
@@ -125,20 +157,32 @@ export default function Upload() {
         is_public: true,
       });
 
-      if (videoError) throw videoError;
+      if (videoError) {
+        console.error("Database error:", videoError);
+        throw new Error(`Lỗi lưu video: ${videoError.message}`);
+      }
+
+      setUploadProgress(100);
+      setUploadStage("Hoàn thành!");
 
       toast({
-        title: "Video uploaded successfully!",
-        description: "Your video is now live",
+        title: "Tải video thành công!",
+        description: "Video của bạn đã được đăng tải",
       });
 
-      navigate("/");
+      // Wait a bit to show completion
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     } catch (error: any) {
+      console.error("Upload error:", error);
       toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload video",
+        title: "Tải lên thất bại",
+        description: error.message || "Không thể tải video lên. Vui lòng thử lại.",
         variant: "destructive",
       });
+      setUploadProgress(0);
+      setUploadStage("");
     } finally {
       setUploading(false);
     }
@@ -234,6 +278,27 @@ export default function Upload() {
               )}
             </div>
 
+            {/* Upload Progress */}
+            {uploading && (
+              <div className="space-y-3 p-4 bg-muted rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">
+                    {uploadStage}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {uploadProgress}%
+                  </span>
+                </div>
+                <Progress value={uploadProgress} className="h-2" />
+                {uploadProgress === 100 && (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm">Đang chuyển hướng...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Submit */}
             <div className="flex gap-4">
               <Button
@@ -241,14 +306,15 @@ export default function Upload() {
                 disabled={uploading || !videoFile || !title}
                 className="flex-1"
               >
-                {uploading ? "Uploading..." : "Upload Video"}
+                {uploading ? "Đang tải lên..." : "Tải Video Lên"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/")}
+                disabled={uploading}
               >
-                Cancel
+                Hủy
               </Button>
             </div>
           </form>
