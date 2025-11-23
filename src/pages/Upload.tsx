@@ -80,8 +80,11 @@ export default function Upload() {
         channelId = newChannel.id;
       }
 
-      // Upload video file to storage
-      const videoPath = `${user.id}/${Date.now()}-${videoFile.name}`;
+      // Upload video file to storage - sanitize filename
+      const sanitizedVideoName = videoFile.name
+        .replace(/[^a-zA-Z0-9._-]/g, "_")
+        .substring(0, 100);
+      const videoPath = `${user.id}/${Date.now()}-${sanitizedVideoName}`;
       const { error: videoUploadError } = await supabase.storage
         .from("videos")
         .upload(videoPath, videoFile);
@@ -92,10 +95,13 @@ export default function Upload() {
         .from("videos")
         .getPublicUrl(videoPath);
 
-      // Upload thumbnail if provided
+      // Upload thumbnail if provided - sanitize filename
       let thumbnailUrl = null;
       if (thumbnailFile) {
-        const thumbnailPath = `${user.id}/${Date.now()}-${thumbnailFile.name}`;
+        const sanitizedThumbName = thumbnailFile.name
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .substring(0, 100);
+        const thumbnailPath = `${user.id}/${Date.now()}-${sanitizedThumbName}`;
         const { error: thumbnailUploadError } = await supabase.storage
           .from("thumbnails")
           .upload(thumbnailPath, thumbnailFile);

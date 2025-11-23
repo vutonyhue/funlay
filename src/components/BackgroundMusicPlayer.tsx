@@ -1,0 +1,93 @@
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Volume2, VolumeX, Music } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+
+interface BackgroundMusicPlayerProps {
+  musicUrl: string | null;
+  autoPlay?: boolean;
+}
+
+export const BackgroundMusicPlayer = ({ musicUrl, autoPlay = true }: BackgroundMusicPlayerProps) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [volume, setVolume] = useState(50);
+  const [showControls, setShowControls] = useState(false);
+
+  useEffect(() => {
+    if (musicUrl && audioRef.current) {
+      audioRef.current.volume = volume / 100;
+      if (autoPlay) {
+        audioRef.current.play().catch(console.error);
+      }
+    }
+  }, [musicUrl, autoPlay]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+    }
+  }, [volume]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(console.error);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  if (!musicUrl) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50">
+      <div className="bg-card border border-border rounded-lg shadow-lg p-3">
+        <div className="flex items-center gap-3">
+          <Music className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePlay}
+              className="h-8 w-8"
+            >
+              {isPlaying ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+            
+            {showControls && (
+              <div className="w-24">
+                <Slider
+                  value={[volume]}
+                  onValueChange={(value) => setVolume(value[0])}
+                  max={100}
+                  step={1}
+                  className="cursor-pointer"
+                />
+              </div>
+            )}
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowControls(!showControls)}
+              className="h-8 w-8"
+            >
+              <Music className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <audio
+        ref={audioRef}
+        src={musicUrl}
+        loop
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      />
+    </div>
+  );
+};

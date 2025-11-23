@@ -8,6 +8,7 @@ import { VideoCard } from "@/components/Video/VideoCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { BackgroundMusicPlayer } from "@/components/BackgroundMusicPlayer";
 
 interface Channel {
   id: string;
@@ -16,6 +17,11 @@ interface Channel {
   banner_url: string;
   subscriber_count: number;
   user_id: string;
+}
+
+interface Profile {
+  background_music_url: string | null;
+  music_enabled: boolean | null;
 }
 
 interface Video {
@@ -33,6 +39,7 @@ export default function Channel() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -57,6 +64,17 @@ export default function Channel() {
 
       if (error) throw error;
       setChannel(data);
+
+      // Fetch profile for background music
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("background_music_url, music_enabled")
+        .eq("id", data.user_id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
+      }
     } catch (error: any) {
       toast({
         title: "Error loading channel",
@@ -173,6 +191,10 @@ export default function Channel() {
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <main className="pt-14 lg:pl-64">
+        {profile?.music_enabled && profile.background_music_url && (
+          <BackgroundMusicPlayer musicUrl={profile.background_music_url} />
+        )}
+
         {/* Channel Banner */}
         <div className="relative h-48 bg-gradient-to-r from-primary to-secondary">
           {channel.banner_url && (

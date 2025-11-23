@@ -206,33 +206,86 @@ export type Database = {
         }
         Relationships: []
       }
+      posts: {
+        Row: {
+          channel_id: string
+          comment_count: number | null
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_public: boolean | null
+          like_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          comment_count?: number | null
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_public?: boolean | null
+          like_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          comment_count?: number | null
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_public?: boolean | null
+          like_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          background_music_url: string | null
           bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          music_enabled: boolean | null
           updated_at: string
           username: string
           wallet_address: string | null
         }
         Insert: {
           avatar_url?: string | null
+          background_music_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          music_enabled?: boolean | null
           updated_at?: string
           username: string
           wallet_address?: string | null
         }
         Update: {
           avatar_url?: string | null
+          background_music_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          music_enabled?: boolean | null
           updated_at?: string
           username?: string
           wallet_address?: string | null

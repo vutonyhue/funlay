@@ -77,11 +77,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
                 <Video className="mr-2 h-4 w-4" />
                 Tải video lên
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Radio className="mr-2 h-4 w-4" />
-                Phát trực tiếp
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/create-post")}>
                 <SquarePen className="mr-2 h-4 w-4" />
                 Tạo bài đăng
               </DropdownMenuItem>
@@ -105,9 +101,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/your-videos")}>
                 <UserIcon className="mr-2 h-4 w-4" />
-                Your Channel
+                Video của bạn
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/settings")}>
                 <Settings className="mr-2 h-4 w-4" />
