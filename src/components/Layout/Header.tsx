@@ -37,8 +37,8 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           <div className="bg-logo-bg rounded-md px-2 py-1 flex items-center justify-center">
             <Play className="h-5 w-5 text-white fill-white" />
           </div>
-          <span className="text-xl font-bold text-text-blue-dark tracking-tight">
-            FUN<span className="text-text-blue font-normal">PLAY</span>
+          <span className="text-xl font-bold text-primary tracking-tight">
+            FUNPLAY
           </span>
         </div>
       </div>

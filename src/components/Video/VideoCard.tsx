@@ -20,7 +20,7 @@ export const VideoCard = ({
   onTip,
 }: VideoCardProps) => {
   return (
-    <Card className="group overflow-hidden bg-card border-0 hover:bg-hover-blue dark:hover:bg-hover-blue-dark transition-all duration-300 cursor-pointer">
+    <Card className="group overflow-hidden bg-card border-0 hover:bg-hover-blue dark:hover:bg-hover-blue-dark transition-all duration-300 cursor-pointer hover:shadow-xl">
       {/* Thumbnail */}
       <div className="relative aspect-video overflow-hidden rounded-lg">
         <img
@@ -41,11 +41,11 @@ export const VideoCard = ({
           </div>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary-foreground transition-colors">
             {title}
           </h3>
-          <p className="text-xs text-muted-foreground">{channel}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground group-hover:text-primary-foreground/80">{channel}</p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground group-hover:text-primary-foreground/80 mt-1">
             <span>{views}</span>
             <span>•</span>
             <span>{timestamp}</span>

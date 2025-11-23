@@ -54,9 +54,9 @@ All colors MUST be HSL.
     /* Logo background */
     --logo-bg: 210 100% 50%;
     
-    /* Hover effect */
-    --hover-blue: 210 100% 95%;
-    --hover-blue-dark: 210 100% 15%;
+    /* Hover effect - dark blue background */
+    --hover-blue: 210 100% 20%;
+    --hover-blue-dark: 210 100% 25%;
     
     /* Text colors */
     --text-blue: 210 100% 40%;
@@ -111,9 +111,9 @@ All colors MUST be HSL.
     /* Logo background */
     --logo-bg: 210 100% 50%;
     
-    /* Hover effect */
-    --hover-blue: 210 100% 95%;
-    --hover-blue-dark: 210 100% 15%;
+    /* Hover effect - dark blue background */
+    --hover-blue: 210 100% 20%;
+    --hover-blue-dark: 210 100% 25%;
     
     /* Text colors */
     --text-blue: 210 100% 40%;
