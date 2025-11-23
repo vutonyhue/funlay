@@ -92,19 +92,37 @@ export default function Watch() {
     try {
       const { data, error } = await supabase
         .from("comments")
-        .select(`
-          *,
-          profiles (
-            display_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("video_id", id)
         .is("parent_comment_id", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setComments(data || []);
+
+      // Fetch profiles separately
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(c => c.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url")
+          .in("id", userIds);
+
+        const profilesMap = new Map(
+          profilesData?.map(p => [p.id, p]) || []
+        );
+
+        const commentsWithProfiles = data.map(comment => ({
+          ...comment,
+          profiles: profilesMap.get(comment.user_id) || {
+            display_name: "User",
+            avatar_url: null,
+          },
+        }));
+
+        setComments(commentsWithProfiles as any);
+      } else {
+        setComments([]);
+      }
     } catch (error: any) {
       console.error("Error loading comments:", error);
     }
