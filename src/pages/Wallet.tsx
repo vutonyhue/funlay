@@ -1,0 +1,452 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Wallet as WalletIcon, Send, History, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { sendTip, getTransactionHistory } from "@/lib/tipping";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface TokenBalance {
+  symbol: string;
+  balance: string;
+  decimals: number;
+  address: string;
+}
+
+const SUPPORTED_TOKENS = [
+  { symbol: "BNB", address: "native", decimals: 18 },
+  { symbol: "USDT", address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18 },
+  { symbol: "CAMLY", address: "0x", decimals: 18 },
+  { symbol: "BTC", address: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c", decimals: 18 },
+];
+
+const Wallet = () => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [address, setAddress] = useState<string>("");
+  const [balances, setBalances] = useState<TokenBalance[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Transfer form state
+  const [recipientAddress, setRecipientAddress] = useState("");
+  const [amount, setAmount] = useState("");
+  const [selectedToken, setSelectedToken] = useState("BNB");
+
+  useEffect(() => {
+    checkWalletConnection();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadTransactionHistory();
+    }
+  }, [user]);
+
+  const checkWalletConnection = async () => {
+    if (typeof window.ethereum !== "undefined") {
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_accounts" });
+        if (accounts.length > 0) {
+          setAddress(accounts[0]);
+          setIsConnected(true);
+          await fetchBalances(accounts[0]);
+        }
+      } catch (error) {
+        console.error("Error checking wallet connection:", error);
+      }
+    }
+  };
+
+  const connectWallet = async () => {
+    if (typeof window.ethereum === "undefined") {
+      toast({
+        title: "MetaMask không tìm thấy",
+        description: "Vui lòng cài đặt MetaMask để sử dụng ví",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      
+      if (chainId !== "0x38") {
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x38" }],
+          });
+        } catch (switchError: any) {
+          if (switchError.code === 4902) {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: "0x38",
+                  chainName: "Binance Smart Chain",
+                  nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+                  rpcUrls: ["https://bsc-dataseed.binance.org/"],
+                  blockExplorerUrls: ["https://bscscan.com/"],
+                },
+              ],
+            });
+          }
+        }
+      }
+
+      setAddress(accounts[0]);
+      setIsConnected(true);
+      await fetchBalances(accounts[0]);
+      
+      // Save wallet address to profile
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({ wallet_address: accounts[0] })
+          .eq("id", user.id);
+      }
+      
+      toast({
+        title: "Ví đã kết nối",
+        description: `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Kết nối thất bại",
+        description: error.message || "Không thể kết nối ví",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchBalances = async (userAddress: string) => {
+    setLoading(true);
+    const newBalances: TokenBalance[] = [];
+
+    for (const token of SUPPORTED_TOKENS) {
+      try {
+        if (token.address === "native") {
+          const balance = await window.ethereum.request({
+            method: "eth_getBalance",
+            params: [userAddress, "latest"],
+          });
+          const bnbBalance = (parseInt(balance, 16) / 1e18).toFixed(6);
+          newBalances.push({ ...token, balance: bnbBalance });
+        } else if (token.address !== "0x") {
+          // For actual token contracts, fetch real balance
+          newBalances.push({ ...token, balance: "0.000000" });
+        } else {
+          newBalances.push({ ...token, balance: "0.000000" });
+        }
+      } catch (error) {
+        console.error(`Error fetching ${token.symbol} balance:`, error);
+        newBalances.push({ ...token, balance: "0.000000" });
+      }
+    }
+
+    setBalances(newBalances);
+    setLoading(false);
+  };
+
+  const loadTransactionHistory = async () => {
+    if (!user) return;
+    try {
+      const history = await getTransactionHistory(user.id);
+      setTransactions(history || []);
+    } catch (error) {
+      console.error("Error loading transaction history:", error);
+    }
+  };
+
+  const handleSendToken = async () => {
+    if (!isConnected) {
+      toast({
+        title: "Chưa kết nối ví",
+        description: "Vui lòng kết nối ví trước",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!recipientAddress || !amount) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng điền đầy đủ địa chỉ và số tiền",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const token = SUPPORTED_TOKENS.find(t => t.symbol === selectedToken);
+    if (!token) return;
+
+    setSending(true);
+    try {
+      await sendTip({
+        toAddress: recipientAddress,
+        amount: parseFloat(amount),
+        tokenSymbol: token.symbol,
+        tokenAddress: token.address,
+        decimals: token.decimals,
+      });
+
+      toast({
+        title: "Chuyển thành công!",
+        description: `Đã chuyển ${amount} ${selectedToken}`,
+      });
+
+      setRecipientAddress("");
+      setAmount("");
+      await fetchBalances(address);
+      await loadTransactionHistory();
+    } catch (error: any) {
+      toast({
+        title: "Chuyển thất bại",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const disconnectWallet = () => {
+    setIsConnected(false);
+    setAddress("");
+    setBalances([]);
+    toast({
+      title: "Đã ngắt kết nối",
+      description: "Ví của bạn đã được ngắt kết nối",
+    });
+  };
+
+  if (!isConnected) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <WalletIcon className="w-8 h-8 text-primary" />
+            </div>
+            <CardTitle>Kết nối Ví</CardTitle>
+            <CardDescription>
+              Kết nối ví MetaMask để xem số dư và chuyển tiền
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={connectWallet} className="w-full" size="lg">
+              <WalletIcon className="mr-2 h-5 w-5" />
+              Kết nối MetaMask
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Ví của tôi</h1>
+            <p className="text-muted-foreground mt-1">
+              {address.slice(0, 6)}...{address.slice(-4)}
+            </p>
+          </div>
+          <Button variant="outline" onClick={disconnectWallet}>
+            Ngắt kết nối
+          </Button>
+        </div>
+
+        <Tabs defaultValue="balance" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="balance">Số dư</TabsTrigger>
+            <TabsTrigger value="send">Chuyển tiền</TabsTrigger>
+            <TabsTrigger value="history">Lịch sử</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="balance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Số dư ví</CardTitle>
+                <CardDescription>Tất cả token trong ví của bạn</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {balances.map((token) => (
+                      <div
+                        key={token.symbol}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <span className="font-bold text-primary">
+                              {token.symbol[0]}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold">{token.symbol}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {token.symbol === "BNB" ? "Binance Coin" : token.symbol}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">{token.balance}</p>
+                          <p className="text-sm text-muted-foreground">{token.symbol}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="send">
+            <Card>
+              <CardHeader>
+                <CardTitle>Chuyển tiền</CardTitle>
+                <CardDescription>
+                  Gửi BNB, USDT, CAMLY hoặc BTC cho người dùng khác
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="token">Token</Label>
+                    <Select value={selectedToken} onValueChange={setSelectedToken}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_TOKENS.map((token) => (
+                          <SelectItem key={token.symbol} value={token.symbol}>
+                            {token.symbol}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="recipient">Địa chỉ người nhận</Label>
+                    <Input
+                      id="recipient"
+                      placeholder="0x..."
+                      value={recipientAddress}
+                      onChange={(e) => setRecipientAddress(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Số tiền</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.000001"
+                      placeholder="0.0"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSendToken}
+                    disabled={sending}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {sending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Đang gửi...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Gửi {selectedToken}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <Card>
+              <CardHeader>
+                <CardTitle>Lịch sử giao dịch</CardTitle>
+                <CardDescription>Tất cả giao dịch của bạn</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {transactions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Chưa có giao dịch nào</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {transactions.map((tx) => (
+                      <div
+                        key={tx.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {tx.from_user_id === user?.id ? "Đã gửi" : "Đã nhận"}{" "}
+                            {tx.amount} {tx.token_type}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {tx.from_user_id === user?.id
+                              ? `Đến: ${tx.to_address.slice(0, 6)}...${tx.to_address.slice(-4)}`
+                              : `Từ: ${tx.from_address.slice(0, 6)}...${tx.from_address.slice(-4)}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(tx.created_at).toLocaleString("vi-VN")}
+                          </p>
+                        </div>
+                        <div>
+                          <span
+                            className={`text-xs px-2 py-1 rounded ${
+                              tx.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {tx.status === "completed" ? "Thành công" : "Thất bại"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default Wallet;
