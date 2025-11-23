@@ -103,10 +103,13 @@ const YourVideos = () => {
       
       <main className="pt-14 lg:pl-64">
         <div className="max-w-7xl mx-auto p-6">
+          <div className="bg-blue-600 text-white p-6 rounded-lg mb-6 shadow-lg">
+            <h1 className="text-4xl font-bold mb-2">📹 Video của bạn</h1>
+            <p className="text-lg">Quản lý video đã đăng - Click các nút <span className="font-bold bg-white text-blue-600 px-2 py-1 rounded">SỬA</span> hoặc <span className="font-bold bg-red-600 px-2 py-1 rounded">XÓA</span> bên phải mỗi video</p>
+          </div>
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Video của bạn</h1>
-            <Button onClick={() => navigate("/upload")}>
-              Tải video lên
+            <Button onClick={() => navigate("/upload")} size="lg" className="font-bold">
+              ➕ Tải video mới lên
             </Button>
           </div>
 
@@ -149,32 +152,32 @@ const YourVideos = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 flex-shrink-0">
+                  <div className="flex flex-col gap-3 flex-shrink-0">
                     <Button
                       variant="default"
-                      size="sm"
+                      size="lg"
                       onClick={() => navigate(`/edit-video/${video.id}`)}
-                      className="gap-2 min-w-[120px] justify-start bg-primary text-primary-foreground hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-semibold"
+                      className="gap-3 min-w-[140px] justify-start bg-blue-600 text-white hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-bold text-base border-2 border-blue-700 shadow-lg"
                     >
-                      <Edit className="h-5 w-5" />
-                      Sửa
+                      <Edit className="h-6 w-6" />
+                      SỬA
                     </Button>
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="gap-2 min-w-[120px] justify-start border-2 hover:bg-hover-yellow hover:text-primary hover:border-hover-yellow transition-all duration-300 font-semibold"
+                      size="lg"
+                      className="gap-3 min-w-[140px] justify-start border-3 border-gray-400 hover:bg-hover-yellow hover:text-primary hover:border-hover-yellow transition-all duration-300 font-bold text-base shadow-lg bg-white text-gray-700"
                     >
-                      <EyeOff className="h-5 w-5" />
-                      Ẩn
+                      <EyeOff className="h-6 w-6" />
+                      ẨN
                     </Button>
                     <Button
                       variant="destructive"
-                      size="sm"
+                      size="lg"
                       onClick={() => setDeleteVideoId(video.id)}
-                      className="gap-2 min-w-[120px] justify-start bg-destructive text-destructive-foreground hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-semibold"
+                      className="gap-3 min-w-[140px] justify-start bg-red-600 text-white hover:bg-hover-yellow hover:text-primary transition-all duration-300 font-bold text-base border-2 border-red-700 shadow-lg"
                     >
-                      <Trash2 className="h-5 w-5" />
-                      Xóa
+                      <Trash2 className="h-6 w-6" />
+                      XÓA
                     </Button>
                   </div>
                 </div>
