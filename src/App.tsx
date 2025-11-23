@@ -10,6 +10,9 @@ import Upload from "./pages/Upload";
 import Watch from "./pages/Watch";
 import Channel from "./pages/Channel";
 import NotFound from "./pages/NotFound";
+import CreatePost from "./pages/CreatePost";
+import YourVideos from "./pages/YourVideos";
+import EditVideo from "./pages/EditVideo";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/upload" element={<Upload />} />
           <Route path="/watch/:id" element={<Watch />} />
           <Route path="/channel/:id" element={<Channel />} />
+          <Route path="/create-post" element={<CreatePost />} />
+          <Route path="/your-videos" element={<YourVideos />} />
+          <Route path="/edit-video/:id" element={<EditVideo />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

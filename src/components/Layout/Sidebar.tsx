@@ -2,6 +2,7 @@ import { Home, Zap, Users, Library, History, Video, Clock, ThumbsUp, Wallet } fr
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -17,12 +18,20 @@ const navItems = [
 const libraryItems = [
   { icon: Library, label: "Library", href: "/library" },
   { icon: History, label: "History", href: "/history" },
-  { icon: Video, label: "Your videos", href: "/your-videos" },
+  { icon: Video, label: "Video của bạn", href: "/your-videos" },
   { icon: Clock, label: "Watch later", href: "/watch-later" },
   { icon: ThumbsUp, label: "Liked videos", href: "/liked" },
 ];
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (href: string) => {
+    navigate(href);
+    onClose();
+  };
+
   return (
     <>
       {/* Mobile overlay */}
@@ -48,7 +57,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 <Button
                   key={item.label}
                   variant="ghost"
-                  className="w-full justify-start gap-6 px-3 py-2.5 h-auto hover:bg-accent"
+                  onClick={() => handleNavigation(item.href)}
+                  className={cn(
+                    "w-full justify-start gap-6 px-3 py-2.5 h-auto hover:bg-accent",
+                    location.pathname === item.href && "bg-accent"
+                  )}
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
@@ -64,7 +77,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 <Button
                   key={item.label}
                   variant="ghost"
-                  className="w-full justify-start gap-6 px-3 py-2.5 h-auto hover:bg-accent"
+                  onClick={() => handleNavigation(item.href)}
+                  className={cn(
+                    "w-full justify-start gap-6 px-3 py-2.5 h-auto hover:bg-accent",
+                    location.pathname === item.href && "bg-accent"
+                  )}
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
@@ -78,7 +95,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             <div className="px-3 py-2">
               <Button
                 variant="ghost"
-                className="w-full justify-start gap-6 px-3 py-2.5 h-auto hover:bg-accent text-foreground"
+                onClick={() => handleNavigation("/wallet")}
+                className={cn(
+                  "w-full justify-start gap-6 px-3 py-2.5 h-auto hover:bg-accent text-foreground",
+                  location.pathname === "/wallet" && "bg-accent"
+                )}
               >
                 <Wallet className="h-5 w-5 text-fun-yellow" />
                 <span>Wallet</span>
