@@ -18,6 +18,8 @@ export default function Upload() {
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStage, setUploadStage] = useState("");
@@ -37,6 +39,18 @@ export default function Upload() {
     navigate("/auth");
     return null;
   }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleVideoUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,36 +80,84 @@ export default function Upload() {
     setUploadStage("Đang chuẩn bị...");
 
     try {
+      // Upload avatar first if provided
+      if (avatarFile) {
+        setUploadStage("Đang tải ảnh đại diện...");
+        setUploadProgress(2);
+        
+        const fileExt = avatarFile.name.split(".").pop();
+        const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("thumbnails")
+          .upload(fileName, avatarFile, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from("thumbnails")
+            .getPublicUrl(fileName);
+
+          // Update profile with new avatar
+          await supabase
+            .from("profiles")
+            .update({
+              avatar_url: publicUrl,
+            })
+            .eq('id', user.id);
+        }
+      }
+
       // Step 1: Get or create channel (5% progress)
       setUploadStage("Đang kiểm tra kênh...");
       setUploadProgress(5);
       
-      const { data: channels } = await supabase
-        .from("channels")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Retry logic for channel fetch
+      let channelId = null;
+      let retryChannel = 0;
+      const maxChannelRetries = 3;
+      
+      while (!channelId && retryChannel < maxChannelRetries) {
+        try {
+          const { data: channels, error: channelFetchError } = await supabase
+            .from("channels")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
 
-      let channelId = channels?.id;
+          if (channelFetchError) throw channelFetchError;
+          
+          channelId = channels?.id;
 
-      if (!channelId) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("display_name")
-          .eq("id", user.id)
-          .single();
+          if (!channelId) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("display_name")
+              .eq("id", user.id)
+              .maybeSingle();
 
-        const { data: newChannel, error: channelError } = await supabase
-          .from("channels")
-          .insert({
-            user_id: user.id,
-            name: profile?.display_name || user.email?.split("@")[0] || "Kênh của tôi",
-          })
-          .select()
-          .single();
+            const { data: newChannel, error: channelError } = await supabase
+              .from("channels")
+              .insert({
+                user_id: user.id,
+                name: profile?.display_name || user.email?.split("@")[0] || "Kênh của tôi",
+              })
+              .select()
+              .single();
 
-        if (channelError) throw channelError;
-        channelId = newChannel.id;
+            if (channelError) throw channelError;
+            channelId = newChannel.id;
+          }
+          break;
+        } catch (error: any) {
+          retryChannel++;
+          if (retryChannel >= maxChannelRetries) {
+            throw new Error("Không thể kết nối tới server. Vui lòng thử lại sau.");
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
 
       // Step 2: Upload video (10% - 85% progress)
@@ -316,14 +378,51 @@ export default function Upload() {
               />
             </div>
 
+            {/* Avatar Upload */}
+            <div>
+              <Label htmlFor="avatar">Ảnh đại diện (Tùy chọn)</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Ảnh này sẽ được đặt làm ảnh đại diện cho kênh của bạn
+              </p>
+              <div className="flex items-center gap-4">
+                {avatarPreview ? (
+                  <img 
+                    src={avatarPreview} 
+                    alt="Avatar preview" 
+                    className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-border">
+                    <UploadIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    disabled={uploading}
+                    className="cursor-pointer"
+                  />
+                  {avatarFile && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {avatarFile.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Thumbnail */}
             <div>
-              <Label htmlFor="thumbnail">Thumbnail</Label>
+              <Label htmlFor="thumbnail">Thumbnail video</Label>
               <Input
                 id="thumbnail"
                 type="file"
                 accept="image/*"
                 onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
+                disabled={uploading}
                 className="mt-1"
               />
               {thumbnailFile && (
