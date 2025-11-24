@@ -17,6 +17,7 @@ interface Video {
   video_url: string;
   view_count: number | null;
   created_at: string;
+  user_id: string;
   channels: {
     name: string;
     id: string;
@@ -164,6 +165,7 @@ const Index = () => {
                 <VideoCard
                   key={video.id}
                   videoId={video.id}
+                  userId={video.user_id}
                   thumbnail={video.thumbnail_url || "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=225&fit=crop"}
                   title={video.title}
                   channel={video.channels?.name || "Unknown Channel"}
