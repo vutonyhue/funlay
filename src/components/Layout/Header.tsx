@@ -53,12 +53,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       >
         <Menu className="h-5 w-5" />
       </Button>
-        <div className="flex items-center gap-2 cursor-pointer hover:bg-hover-yellow hover:text-primary rounded-lg px-3 py-2 transition-all duration-300" onClick={() => navigate("/")}>
-          <div className="bg-logo-bg rounded-md px-2 py-1.5 flex items-center justify-center shadow-lg">
-            <Play className="h-7 w-7 text-white fill-white" />
+        <div className="flex items-center gap-3 cursor-pointer hover:bg-accent/50 rounded-xl px-4 py-2 transition-all duration-300 border border-border/50 hover:border-primary/30 shadow-sm hover:shadow-md" onClick={() => navigate("/")}>
+          <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg px-3 py-2 flex items-center justify-center shadow-lg">
+            <Play className="h-6 w-6 text-white fill-white" />
           </div>
-          <span className="text-2xl font-bold tracking-tight">
-            Fun<span className="font-extrabold">Play</span>
+          <span className="text-2xl font-black tracking-tight">
+            FunPlay
           </span>
         </div>
       </div>

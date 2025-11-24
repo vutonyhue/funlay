@@ -48,7 +48,7 @@ export const StudioSettings = () => {
         .from("channels")
         .select("id, name, description, banner_url")
         .eq("user_id", user?.id)
-        .single();
+        .maybeSingle();
 
       if (channelError) throw channelError;
 
@@ -65,7 +65,7 @@ export const StudioSettings = () => {
         .from("profiles")
         .select("display_name, username, bio, avatar_url")
         .eq("id", user?.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) throw profileError;
 
@@ -143,14 +143,18 @@ export const StudioSettings = () => {
         bannerUrl = publicUrl;
       }
 
+      // Use upsert to handle both insert and update
       const { error } = await supabase
         .from("channels")
-        .update({
+        .upsert({
+          id: channelId || undefined,
+          user_id: user?.id,
           name: channelName.trim(),
           description: channelDescription.trim() || null,
           banner_url: bannerUrl,
-        })
-        .eq("id", channelId);
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
 
@@ -194,15 +198,18 @@ export const StudioSettings = () => {
         avatarUrl = publicUrl;
       }
 
+      // Use upsert to handle both insert and update
       const { error } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          id: user?.id,
           display_name: displayName.trim() || null,
-          username: username.trim(),
+          username: username.trim() || 'user_' + user?.id?.substring(0, 8),
           bio: bio.trim() || null,
           avatar_url: avatarUrl,
-        })
-        .eq("id", user?.id);
+        }, {
+          onConflict: 'id'
+        });
 
       if (error) throw error;
 
