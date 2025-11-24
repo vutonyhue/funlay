@@ -298,7 +298,7 @@ export const StudioContent = () => {
                 <TableHead className="text-center">Lượt xem</TableHead>
                 <TableHead className="text-center">Bình luận</TableHead>
                 <TableHead className="text-center">Lượt thích</TableHead>
-                <TableHead className="w-12"></TableHead>
+                <TableHead className="text-center">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -374,27 +374,50 @@ export const StudioContent = () => {
                     {video.like_count || 0}
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => setEditingVideo(video)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Chỉnh sửa
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => setDeleteVideoId(video.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Xóa vĩnh viễn
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center justify-center gap-2">
+                      {/* Visible action buttons for desktop */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingVideo(video)}
+                        className="hidden sm:inline-flex text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteVideoId(video.id)}
+                        className="hidden sm:inline-flex text-destructive hover:text-destructive hover:bg-destructive/10"
+                        title="Xóa"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      
+                      {/* 3-dot menu for mobile */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="sm:hidden">
+                            <MoreVertical className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => setEditingVideo(video)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Chỉnh sửa
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => setDeleteVideoId(video.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Xóa vĩnh viễn
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
