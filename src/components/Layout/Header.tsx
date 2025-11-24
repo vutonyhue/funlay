@@ -46,14 +46,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     <header className="fixed top-0 left-0 right-0 h-14 bg-background border-b border-border z-50 flex items-center justify-between px-4 gap-4">
       {/* Left section */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onMenuClick}
-          className="lg:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onMenuClick}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
         <div className="flex items-center gap-2 cursor-pointer hover:bg-hover-yellow hover:text-primary rounded-lg px-3 py-2 transition-all duration-300" onClick={() => navigate("/")}>
           <div className="bg-logo-bg rounded-md px-2 py-1.5 flex items-center justify-center shadow-lg">
             <Play className="h-7 w-7 text-white fill-white" />
