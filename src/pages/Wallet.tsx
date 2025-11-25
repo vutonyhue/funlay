@@ -16,13 +16,34 @@ interface TokenBalance {
   balance: string;
   decimals: number;
   address: string;
+  icon: string;
 }
 
 const SUPPORTED_TOKENS = [
-  { symbol: "BNB", address: "native", decimals: 18 },
-  { symbol: "USDT", address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18 },
-  { symbol: "CAMLY", address: "0x", decimals: 18 },
-  { symbol: "BTC", address: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c", decimals: 18 },
+  { 
+    symbol: "BNB", 
+    address: "native", 
+    decimals: 18,
+    icon: "https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=035"
+  },
+  { 
+    symbol: "USDT", 
+    address: "0x55d398326f99059fF775485246999027B3197955", 
+    decimals: 18,
+    icon: "https://cryptologos.cc/logos/tether-usdt-logo.svg?v=035"
+  },
+  { 
+    symbol: "CAMLY", 
+    address: "0x0910320181889fefde0bb1ca63962b0a8882e413", 
+    decimals: 18,
+    icon: "https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=035"
+  },
+  { 
+    symbol: "BTC", 
+    address: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c", 
+    decimals: 18,
+    icon: "https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=035"
+  },
 ];
 
 const Wallet = () => {
@@ -32,6 +53,7 @@ const Wallet = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -66,6 +88,8 @@ const Wallet = () => {
   };
 
   const connectWallet = async () => {
+    if (isConnecting) return; // Prevent duplicate requests
+    
     if (typeof window.ethereum === "undefined") {
       toast({
         title: "MetaMask không tìm thấy",
@@ -75,6 +99,7 @@ const Wallet = () => {
       return;
     }
 
+    setIsConnecting(true);
     try {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
@@ -128,6 +153,8 @@ const Wallet = () => {
         description: error.message || "Không thể kết nối ví",
         variant: "destructive",
       });
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -144,10 +171,8 @@ const Wallet = () => {
           });
           const bnbBalance = (parseInt(balance, 16) / 1e18).toFixed(6);
           newBalances.push({ ...token, balance: bnbBalance });
-        } else if (token.address !== "0x") {
-          // For actual token contracts, fetch real balance
-          newBalances.push({ ...token, balance: "0.000000" });
         } else {
+          // For ERC-20 tokens, show 0 balance (requires ethers.js for real balances)
           newBalances.push({ ...token, balance: "0.000000" });
         }
       } catch (error) {
@@ -246,9 +271,14 @@ const Wallet = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={connectWallet} className="w-full" size="lg">
+            <Button 
+              onClick={connectWallet} 
+              disabled={isConnecting}
+              className="w-full" 
+              size="lg"
+            >
               <WalletIcon className="mr-2 h-5 w-5" />
-              Kết nối MetaMask
+              {isConnecting ? "Đang kết nối..." : "Kết nối MetaMask"}
             </Button>
           </CardContent>
         </Card>
@@ -294,18 +324,24 @@ const Wallet = () => {
                     {balances.map((token) => (
                       <div
                         key={token.symbol}
-                        className="flex items-center justify-between p-4 border rounded-lg"
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                            <span className="font-bold text-primary">
-                              {token.symbol[0]}
-                            </span>
-                          </div>
+                          <img 
+                            src={token.icon} 
+                            alt={token.symbol}
+                            className="w-10 h-10 rounded-full"
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://via.placeholder.com/40';
+                            }}
+                          />
                           <div>
                             <p className="font-semibold">{token.symbol}</p>
                             <p className="text-sm text-muted-foreground">
-                              {token.symbol === "BNB" ? "Binance Coin" : token.symbol}
+                              {token.symbol === "BNB" ? "Binance Coin" : 
+                               token.symbol === "USDT" ? "Tether USD" :
+                               token.symbol === "BTC" ? "Bitcoin" :
+                               token.symbol === "CAMLY" ? "Camly Coin" : token.symbol}
                             </p>
                           </div>
                         </div>
@@ -340,7 +376,10 @@ const Wallet = () => {
                       <SelectContent>
                         {SUPPORTED_TOKENS.map((token) => (
                           <SelectItem key={token.symbol} value={token.symbol}>
-                            {token.symbol}
+                            <div className="flex items-center gap-2">
+                              <img src={token.icon} alt={token.symbol} className="w-5 h-5 rounded-full" />
+                              <span>{token.symbol}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>

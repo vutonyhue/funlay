@@ -35,7 +35,7 @@ const SUPPORTED_TOKENS = [
     symbol: "CAMLY", 
     address: "0x0910320181889fefde0bb1ca63962b0a8882e413", 
     decimals: 18,
-    icon: "https://images.unsplash.com/photo-1621504450181-5d356f61d307?w=100&h=100&fit=crop"
+    icon: "https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=035"
   },
   { 
     symbol: "BTC", 
@@ -47,12 +47,15 @@ const SUPPORTED_TOKENS = [
 
 export const MultiTokenWallet = () => {
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [address, setAddress] = useState<string>("");
   const [balances, setBalances] = useState<TokenBalance[]>([]);
   const [selectedToken, setSelectedToken] = useState("BNB");
   const { toast } = useToast();
 
   const connectWallet = async () => {
+    if (isConnecting) return; // Prevent duplicate requests
+    
     if (typeof window.ethereum === "undefined") {
       toast({
         title: "MetaMask Not Found",
@@ -62,6 +65,7 @@ export const MultiTokenWallet = () => {
       return;
     }
 
+    setIsConnecting(true);
     try {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
@@ -129,6 +133,8 @@ export const MultiTokenWallet = () => {
         description: error.message || "Failed to connect wallet",
         variant: "destructive",
       });
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -238,11 +244,14 @@ export const MultiTokenWallet = () => {
   return (
     <Button
       onClick={connectWallet}
+      disabled={isConnecting}
       size="sm"
       className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
     >
       <Wallet className="h-4 w-4" />
-      <span className="hidden md:inline">Connect Wallet</span>
+      <span className="hidden md:inline">
+        {isConnecting ? "Connecting..." : "Connect Wallet"}
+      </span>
     </Button>
   );
 };
