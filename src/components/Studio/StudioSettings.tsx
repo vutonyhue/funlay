@@ -6,13 +6,15 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, ExternalLink } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 export const StudioSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
   
   // Channel info
   const [channelName, setChannelName] = useState("");
@@ -245,9 +247,10 @@ export const StudioSettings = () => {
       <h1 className="text-2xl font-semibold mb-6">Cài đặt kênh</h1>
 
       <Tabs defaultValue="channel" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="channel">Thông tin kênh</TabsTrigger>
           <TabsTrigger value="profile">Hồ sơ cá nhân</TabsTrigger>
+          <TabsTrigger value="rewards">Phần thưởng</TabsTrigger>
         </TabsList>
 
         <TabsContent value="channel" className="space-y-6">
@@ -370,6 +373,33 @@ export const StudioSettings = () => {
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Lưu thay đổi hồ sơ
             </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="rewards" className="space-y-6">
+          <div className="bg-card border border-border rounded-lg p-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Cài đặt phần thưởng xem video</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Quản lý hệ thống tự động trao thưởng cho người xem video
+                </p>
+              </div>
+              
+              <Button 
+                onClick={() => navigate("/reward-settings")}
+                className="w-full sm:w-auto"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Mở cài đặt phần thưởng
+              </Button>
+
+              <div className="border-t pt-4 mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Tính năng này cho phép bạn thiết lập hệ thống thưởng tự động khi người dùng xem video đủ thời lượng.
+                </p>
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

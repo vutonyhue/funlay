@@ -19,8 +19,8 @@ interface TipModalProps {
 const TOKENS = [
   { symbol: "BNB", address: "native", decimals: 18 },
   { symbol: "USDT", address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18 },
-  { symbol: "CAMLY", address: "0x", decimals: 18 }, // Replace with actual address
-  { symbol: "BTC", address: "0x", decimals: 18 }, // Replace with actual BTCB address
+  { symbol: "CAMLY", address: "0x0910320181889fefde0bb1ca63962b0a8882e413", decimals: 18 },
+  { symbol: "BTC", address: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c", decimals: 18 },
 ];
 
 export const TipModal = ({ open, onOpenChange, creatorAddress, videoId, creatorName }: TipModalProps) => {
