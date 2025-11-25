@@ -195,21 +195,45 @@ const Wallet = () => {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       
+      // Verify we're on BSC mainnet
+      const network = await provider.getNetwork();
+      console.log("Current network:", network.chainId.toString());
+      
+      if (network.chainId !== BigInt(56)) {
+        console.warn("Not on BSC mainnet, switching...");
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x38" }],
+          });
+          // Wait a bit for network to switch
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error("Failed to switch network:", error);
+        }
+      }
+      
       for (const token of SUPPORTED_TOKENS) {
         try {
           if (token.address === "native") {
             const balance = await provider.getBalance(userAddress);
             const bnbBalance = ethers.formatEther(balance);
+            console.log(`BNB balance: ${bnbBalance}`);
             newBalances.push({ ...token, balance: parseFloat(bnbBalance).toFixed(6) });
           } else {
-            // ERC-20 token balance
+            // ERC-20 token balance with full ABI
             const tokenContract = new ethers.Contract(
               token.address,
-              ["function balanceOf(address) view returns (uint256)"],
+              [
+                "function balanceOf(address account) view returns (uint256)",
+                "function decimals() view returns (uint8)"
+              ],
               provider
             );
             const balance = await tokenContract.balanceOf(userAddress);
+            console.log(`${token.symbol} balance (raw):`, balance.toString());
             const formattedBalance = ethers.formatUnits(balance, token.decimals);
+            console.log(`${token.symbol} balance (formatted):`, formattedBalance);
             newBalances.push({ ...token, balance: parseFloat(formattedBalance).toFixed(6) });
           }
         } catch (error) {

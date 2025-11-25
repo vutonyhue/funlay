@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Wallet, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { ethers } from "ethers";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,24 +142,62 @@ export const MultiTokenWallet = () => {
   const fetchBalances = async (userAddress: string) => {
     const newBalances: TokenBalance[] = [];
 
-    for (const token of SUPPORTED_TOKENS) {
-      try {
-        if (token.address === "native") {
-          // Fetch BNB balance
-          const balance = await window.ethereum.request({
-            method: "eth_getBalance",
-            params: [userAddress, "latest"],
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      
+      // Verify we're on BSC mainnet
+      const network = await provider.getNetwork();
+      console.log("MultiTokenWallet - Current network:", network.chainId.toString());
+      
+      if (network.chainId !== BigInt(56)) {
+        console.warn("Not on BSC mainnet, switching...");
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x38" }],
           });
-          const bnbBalance = (parseInt(balance, 16) / 1e18).toFixed(4);
-          newBalances.push({ 
-            symbol: token.symbol, 
-            balance: bnbBalance, 
-            decimals: token.decimals,
-            icon: token.icon
-          });
-        } else {
-          // Fetch ERC-20 token balance
-          // This would require ethers.js or web3.js for proper implementation
+          // Wait a bit for network to switch
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error("Failed to switch network:", error);
+        }
+      }
+      
+      for (const token of SUPPORTED_TOKENS) {
+        try {
+          if (token.address === "native") {
+            const balance = await provider.getBalance(userAddress);
+            const bnbBalance = ethers.formatEther(balance);
+            console.log(`BNB balance: ${bnbBalance}`);
+            newBalances.push({ 
+              symbol: token.symbol, 
+              balance: parseFloat(bnbBalance).toFixed(4), 
+              decimals: token.decimals,
+              icon: token.icon
+            });
+          } else {
+            // ERC-20 token balance with full ABI
+            const tokenContract = new ethers.Contract(
+              token.address,
+              [
+                "function balanceOf(address account) view returns (uint256)",
+                "function decimals() view returns (uint8)"
+              ],
+              provider
+            );
+            const balance = await tokenContract.balanceOf(userAddress);
+            console.log(`${token.symbol} balance (raw):`, balance.toString());
+            const formattedBalance = ethers.formatUnits(balance, token.decimals);
+            console.log(`${token.symbol} balance (formatted):`, formattedBalance);
+            newBalances.push({ 
+              symbol: token.symbol, 
+              balance: parseFloat(formattedBalance).toFixed(4), 
+              decimals: token.decimals,
+              icon: token.icon
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching ${token.symbol} balance:`, error);
           newBalances.push({ 
             symbol: token.symbol, 
             balance: "0.0000", 
@@ -166,15 +205,18 @@ export const MultiTokenWallet = () => {
             icon: token.icon
           });
         }
-      } catch (error) {
-        console.error(`Error fetching ${token.symbol} balance:`, error);
+      }
+    } catch (error) {
+      console.error("Error initializing provider:", error);
+      // Fallback to all zeros if provider fails
+      SUPPORTED_TOKENS.forEach(token => {
         newBalances.push({ 
           symbol: token.symbol, 
           balance: "0.0000", 
           decimals: token.decimals,
           icon: token.icon
         });
-      }
+      });
     }
 
     setBalances(newBalances);
