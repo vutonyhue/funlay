@@ -19,6 +19,7 @@ import EditPost from "./pages/EditPost";
 import ManagePlaylists from "./pages/ManagePlaylists";
 import ManageChannel from "./pages/ManageChannel";
 import Studio from "./pages/Studio";
+import RewardSettings from "./pages/RewardSettings";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/studio" element={<Studio />} />
           <Route path="/dashboard" element={<Studio />} />
+          <Route path="/reward-settings" element={<RewardSettings />} />
           {/* Temporary redirect routes for missing pages */}
           <Route path="/shorts" element={<Index />} />
           <Route path="/subscriptions" element={<Index />} />

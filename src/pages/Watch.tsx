@@ -7,7 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ThumbsUp, ThumbsDown, Share2, MoreHorizontal } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Share2, MoreHorizontal, Coins, Gift } from "lucide-react";
+import { TipModal } from "@/components/Tipping/TipModal";
+import { sendTip } from "@/lib/tipping";
 
 interface Video {
   id: string;
@@ -55,6 +57,10 @@ export default function Watch() {
   const [recommendedVideos, setRecommendedVideos] = useState<RecommendedVideo[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
+  const [tipModalOpen, setTipModalOpen] = useState(false);
+  const [rewardSettings, setRewardSettings] = useState<any>(null);
+  const [watchProgress, setWatchProgress] = useState(0);
+  const [rewardClaimed, setRewardClaimed] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -65,8 +71,44 @@ export default function Watch() {
       fetchVideo();
       fetchComments();
       fetchRecommendedVideos();
+      fetchRewardSettings();
+      checkWatchProgress();
     }
   }, [id]);
+
+  const fetchRewardSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("reward_settings")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      setRewardSettings(data);
+    } catch (error) {
+      console.error("Error fetching reward settings:", error);
+    }
+  };
+
+  const checkWatchProgress = async () => {
+    if (!user || !id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("video_watch_progress")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("video_id", id)
+        .single();
+
+      if (data) {
+        setRewardClaimed(data.rewarded);
+        setWatchProgress(data.watch_percentage);
+      }
+    } catch (error) {
+      // No existing progress
+    }
+  };
 
   const fetchVideo = async () => {
     try {
@@ -233,6 +275,127 @@ export default function Watch() {
     }
   };
 
+  const handleVideoProgress = async () => {
+    if (!videoRef.current || !user || !id || rewardClaimed) return;
+
+    const currentTime = videoRef.current.currentTime;
+    const duration = videoRef.current.duration;
+    const percentage = Math.floor((currentTime / duration) * 100);
+
+    setWatchProgress(percentage);
+
+    // Update watch progress in database
+    if (percentage > watchProgress) {
+      await supabase.from("video_watch_progress").upsert({
+        user_id: user.id,
+        video_id: id,
+        watch_percentage: percentage,
+        rewarded: rewardClaimed,
+      });
+    }
+
+    // Check if user reached 80% and reward is enabled
+    if (
+      percentage >= (rewardSettings?.min_watch_percentage || 80) &&
+      rewardSettings?.reward_enabled &&
+      !rewardClaimed
+    ) {
+      await claimReward();
+    }
+  };
+
+  const claimReward = async () => {
+    if (!user || !video || rewardClaimed) return;
+
+    try {
+      // Get user's wallet address
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("wallet_address")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.wallet_address) {
+        toast({
+          title: "Kết nối ví",
+          description: "Vui lòng kết nối ví MetaMask để nhận thưởng!",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Mark as rewarded
+      await supabase.from("video_watch_progress").upsert({
+        user_id: user.id,
+        video_id: id!,
+        watch_percentage: watchProgress,
+        rewarded: true,
+      });
+
+      setRewardClaimed(true);
+
+      toast({
+        title: `🎉 Bạn vừa nhận được ${rewardSettings.reward_amount} ${rewardSettings.reward_token}!`,
+        description: "Phần thưởng sẽ được gửi đến ví của bạn.",
+      });
+    } catch (error: any) {
+      console.error("Error claiming reward:", error);
+    }
+  };
+
+  const handleQuickTip = async (amount: number, token: string, tokenAddress: string) => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      // Get channel owner's wallet address
+      const { data: channelData } = await supabase
+        .from("channels")
+        .select("user_id")
+        .eq("id", video?.channels.id)
+        .single();
+
+      if (!channelData) throw new Error("Channel not found");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("wallet_address")
+        .eq("id", channelData.user_id)
+        .single();
+
+      if (!profile?.wallet_address) {
+        toast({
+          title: "Không thể gửi tip",
+          description: "Chủ kênh chưa thiết lập địa chỉ ví",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const result = await sendTip({
+        toAddress: profile.wallet_address,
+        amount,
+        tokenSymbol: token,
+        tokenAddress,
+        decimals: 18,
+        videoId: id,
+      });
+
+      toast({
+        title: "Tip đã gửi thành công! 🎉",
+        description: `${amount} ${token} đã được gửi đến ${video?.channels.name}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Gửi tip thất bại",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleLike = async () => {
     if (!user) {
       navigate("/auth");
@@ -298,7 +461,93 @@ export default function Watch() {
                   className="w-full h-full"
                   autoPlay
                   onEnded={handleVideoEnd}
+                  onTimeUpdate={handleVideoProgress}
                 />
+              </div>
+
+              {/* Watch Progress & Reward */}
+              {user && rewardSettings?.reward_enabled && (
+                <div className="bg-gradient-to-r from-fun-yellow/20 to-fun-red/20 border border-fun-yellow/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Gift className="h-5 w-5 text-fun-yellow" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {rewardClaimed ? "Đã nhận thưởng!" : `Xem ${rewardSettings.min_watch_percentage}% để nhận thưởng`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {rewardClaimed 
+                            ? `Bạn đã nhận ${rewardSettings.reward_amount} ${rewardSettings.reward_token}` 
+                            : `Nhận ${rewardSettings.reward_amount} ${rewardSettings.reward_token} khi xem đủ video`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-fun-yellow">{watchProgress}%</p>
+                      <p className="text-xs text-muted-foreground">Đã xem</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-fun-yellow to-fun-red transition-all duration-300"
+                      style={{ width: `${Math.min(watchProgress, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Tip Buttons */}
+              <div className="bg-card border rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Coins className="h-5 w-5 text-fun-yellow" />
+                  <h3 className="font-semibold text-foreground">Ủng hộ tác giả</h3>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickTip(0.1, "USDT", "0x55d398326f99059fF775485246999027B3197955")}
+                    className="flex flex-col h-auto py-3 hover:bg-fun-yellow/10 hover:border-fun-yellow"
+                  >
+                    <span className="text-lg font-bold">0.1</span>
+                    <span className="text-xs text-muted-foreground">USDT</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickTip(0.0001, "BNB", "native")}
+                    className="flex flex-col h-auto py-3 hover:bg-fun-yellow/10 hover:border-fun-yellow"
+                  >
+                    <span className="text-lg font-bold">0.0001</span>
+                    <span className="text-xs text-muted-foreground">BNB</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickTip(9.999, "CAMLY", "0x0910320181889fefde0bb1ca63962b0a8882e413")}
+                    className="flex flex-col h-auto py-3 hover:bg-fun-yellow/10 hover:border-fun-yellow"
+                  >
+                    <span className="text-lg font-bold">9.999</span>
+                    <span className="text-xs text-muted-foreground">CAMLY</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickTip(0.000001, "BTC", "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c")}
+                    className="flex flex-col h-auto py-3 hover:bg-fun-yellow/10 hover:border-fun-yellow"
+                  >
+                    <span className="text-lg font-bold">0.000001</span>
+                    <span className="text-xs text-muted-foreground">BTC</span>
+                  </Button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTipModalOpen(true)}
+                  className="w-full mt-2 text-fun-yellow hover:text-fun-yellow hover:bg-fun-yellow/10"
+                >
+                  Hoặc nhập số tiền tùy chỉnh
+                </Button>
               </div>
 
               {/* Video Title */}
@@ -487,6 +736,14 @@ export default function Watch() {
           </div>
         </div>
       </main>
+
+      <TipModal
+        open={tipModalOpen}
+        onOpenChange={setTipModalOpen}
+        creatorAddress={video?.channels.id}
+        videoId={id}
+        creatorName={video?.channels.name || ""}
+      />
     </div>
   );
 }

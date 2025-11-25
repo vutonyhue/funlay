@@ -292,6 +292,36 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_settings: {
+        Row: {
+          created_at: string
+          id: string
+          min_watch_percentage: number
+          reward_amount: number
+          reward_enabled: boolean
+          reward_token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          min_watch_percentage?: number
+          reward_amount?: number
+          reward_enabled?: boolean
+          reward_token?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          min_watch_percentage?: number
+          reward_amount?: number
+          reward_enabled?: boolean
+          reward_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           channel_id: string
@@ -338,6 +368,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_watch_progress: {
+        Row: {
+          created_at: string
+          id: string
+          rewarded: boolean
+          updated_at: string
+          user_id: string
+          video_id: string
+          watch_percentage: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rewarded?: boolean
+          updated_at?: string
+          user_id: string
+          video_id: string
+          watch_percentage?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rewarded?: boolean
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+          watch_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_watch_progress_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       videos: {
         Row: {
