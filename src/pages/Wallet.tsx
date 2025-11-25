@@ -14,6 +14,9 @@ import { ethers } from "ethers";
 import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useCryptoPrices } from "@/hooks/useCryptoPrices";
+import { TokenSwap } from "@/components/Web3/TokenSwap";
+import { PriceChart } from "@/components/Web3/PriceChart";
+import { Badge } from "@/components/ui/badge";
 
 interface TokenBalance {
   symbol: string;
@@ -460,9 +463,11 @@ const Wallet = () => {
           </div>
 
         <Tabs defaultValue="balance" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="balance">Số dư</TabsTrigger>
             <TabsTrigger value="send">Chuyển tiền</TabsTrigger>
+            <TabsTrigger value="swap">Hoán đổi</TabsTrigger>
+            <TabsTrigger value="charts">Biểu đồ</TabsTrigger>
             <TabsTrigger value="history">Lịch sử</TabsTrigger>
           </TabsList>
 
@@ -594,6 +599,17 @@ const Wallet = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="swap">
+            <TokenSwap />
+          </TabsContent>
+
+          <TabsContent value="charts" className="space-y-4">
+            <PriceChart tokenSymbol="BNB" tokenName="Binance Coin" />
+            <PriceChart tokenSymbol="USDT" tokenName="Tether USD" />
+            <PriceChart tokenSymbol="BTC" tokenName="Bitcoin" />
+            <PriceChart tokenSymbol="CAMLY" tokenName="Camly Coin" />
+          </TabsContent>
+
           <TabsContent value="history">
             <Card>
               <CardHeader>
@@ -620,15 +636,9 @@ const Wallet = () => {
                                 {tx.from_user_id === user?.id ? "Đã gửi" : "Đã nhận"}{" "}
                                 {tx.amount} {tx.token_type}
                               </p>
-                              <span
-                                className={`text-xs px-2 py-1 rounded ${
-                                  tx.status === "completed"
-                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                }`}
-                              >
+                              <Badge variant={tx.status === "completed" ? "default" : "destructive"}>
                                 {tx.status === "completed" ? "Thành công" : "Thất bại"}
-                              </span>
+                              </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">
                               {tx.from_user_id === user?.id
