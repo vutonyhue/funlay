@@ -73,6 +73,35 @@ const Wallet = () => {
     }
   }, [user]);
 
+  // Auto-refresh balances every 10 seconds when wallet is connected
+  useEffect(() => {
+    if (!isConnected || !address) return;
+
+    const interval = setInterval(() => {
+      fetchBalances(address);
+      if (user) {
+        loadTransactionHistory();
+      }
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [isConnected, address, user]);
+
+  // Refresh on window focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (isConnected && address) {
+        fetchBalances(address);
+        if (user) {
+          loadTransactionHistory();
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [isConnected, address, user]);
+
   const checkWalletConnection = async () => {
     if (typeof window.ethereum !== "undefined") {
       try {
@@ -306,18 +335,39 @@ const Wallet = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Ví của tôi</h1>
-            <p className="text-muted-foreground mt-1">
-              {address.slice(0, 6)}...{address.slice(-4)}
-            </p>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Ví của tôi</h1>
+              <p className="text-muted-foreground mt-1">
+                {address.slice(0, 6)}...{address.slice(-4)}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => {
+                  fetchBalances(address);
+                  if (user) loadTransactionHistory();
+                  toast({
+                    title: "Đã làm mới",
+                    description: "Số dư và lịch sử đã được cập nhật",
+                  });
+                }}
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                )}
+              </Button>
+              <Button variant="outline" onClick={disconnectWallet}>
+                Ngắt kết nối
+              </Button>
+            </div>
           </div>
-          <Button variant="outline" onClick={disconnectWallet}>
-            Ngắt kết nối
-          </Button>
-        </div>
 
         <Tabs defaultValue="balance" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
