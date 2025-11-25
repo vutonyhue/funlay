@@ -57,7 +57,7 @@ const Index = () => {
           `)
           .eq("is_public", true)
           .order("created_at", { ascending: false })
-          .limit(24);
+          .limit(1000);
 
         if (error) {
           console.error("Error fetching videos:", error);

@@ -1,8 +1,9 @@
-import { Play, Volume2, Edit } from "lucide-react";
+import { Play, Volume2, Edit, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface VideoCardProps {
   thumbnail: string;
@@ -27,6 +28,7 @@ export const VideoCard = ({
 }: VideoCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const isOwner = user?.id === userId;
 
   const handlePlay = () => {
@@ -38,6 +40,16 @@ export const VideoCard = ({
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/studio?tab=content&edit=${videoId}`);
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/watch/${videoId}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Đã copy link",
+      description: "Link video đã được copy vào clipboard",
+    });
   };
 
   return (
@@ -72,16 +84,15 @@ export const VideoCard = ({
           </Button>
         )}
 
-        {/* Volume button */}
+        {/* Share button */}
         <Button
           size="icon"
           variant="secondary"
-          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
+          className="absolute top-2 right-2 h-8 w-8 bg-blue-600 hover:bg-blue-700 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={handleShare}
+          title="Chia sẻ video"
         >
-          <Volume2 className="h-4 w-4" />
+          <Share2 className="h-4 w-4" />
         </Button>
       
       </div>

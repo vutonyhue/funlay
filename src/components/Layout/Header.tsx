@@ -1,7 +1,8 @@
 import { Search, Video, Bell, Menu, Play, User as UserIcon, LogOut, Settings, Radio, SquarePen, Plus, FileVideo, List } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import { MultiTokenWallet } from "@/components/Web3/MultiTokenWallet";
 import { UploadVideoModal } from "@/components/Video/UploadVideoModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +25,30 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   const navigate = useNavigate();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Array<{ id: string; title: string }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Fetch search suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (searchQuery.trim().length < 2) {
+        setSuggestions([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("videos")
+        .select("id, title")
+        .ilike("title", `%${searchQuery}%`)
+        .eq("is_public", true)
+        .limit(5);
+
+      setSuggestions(data || []);
+    };
+
+    const debounce = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(debounce);
+  }, [searchQuery]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +65,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
       }
     }
+    setShowSuggestions(false);
+  };
+
+  const handleSuggestionClick = (videoId: string) => {
+    navigate(`/watch/${videoId}`);
+    setSearchQuery("");
+    setShowSuggestions(false);
   };
 
   return (
@@ -64,12 +96,17 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       </div>
 
       {/* Center - Search */}
-      <div className="flex-1 max-w-2xl">
-        <form onSubmit={handleSearch} className="relative">
+      <div className="flex-1 max-w-2xl relative">
+        <form onSubmit={handleSearch}>
           <Input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder="Tìm kiếm hoặc dán link YouTube..."
             className="w-full pl-4 pr-12 h-10 bg-muted border-border focus:border-primary rounded-full"
           />
@@ -82,6 +119,22 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
             <Search className="h-5 w-5" />
           </Button>
         </form>
+
+        {/* Search Suggestions */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute top-full mt-2 w-full bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.id}
+                onClick={() => handleSuggestionClick(suggestion.id)}
+                className="w-full px-4 py-3 text-left hover:bg-accent flex items-center gap-3 transition-colors"
+              >
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">{suggestion.title}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Right section */}

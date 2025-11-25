@@ -14,8 +14,10 @@ import { ethers } from "ethers";
 import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useCryptoPrices } from "@/hooks/useCryptoPrices";
+import { MultiTokenWallet } from "@/components/Web3/MultiTokenWallet";
 import { TokenSwap } from "@/components/Web3/TokenSwap";
 import { PriceChart } from "@/components/Web3/PriceChart";
+import { PortfolioTracker } from "@/components/Web3/PortfolioTracker";
 import { Badge } from "@/components/ui/badge";
 
 interface TokenBalance {
@@ -463,11 +465,12 @@ const Wallet = () => {
           </div>
 
         <Tabs defaultValue="balance" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="balance">Số dư</TabsTrigger>
             <TabsTrigger value="send">Chuyển tiền</TabsTrigger>
             <TabsTrigger value="swap">Hoán đổi</TabsTrigger>
             <TabsTrigger value="charts">Biểu đồ</TabsTrigger>
+            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
             <TabsTrigger value="history">Lịch sử</TabsTrigger>
           </TabsList>
 
@@ -608,6 +611,10 @@ const Wallet = () => {
             <PriceChart tokenSymbol="USDT" tokenName="Tether USD" />
             <PriceChart tokenSymbol="BTC" tokenName="Bitcoin" />
             <PriceChart tokenSymbol="CAMLY" tokenName="Camly Coin" />
+          </TabsContent>
+
+          <TabsContent value="portfolio">
+            <PortfolioTracker balances={balances} prices={prices} />
           </TabsContent>
 
           <TabsContent value="history">
