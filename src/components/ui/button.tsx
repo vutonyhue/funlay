@@ -9,12 +9,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-cosmic-gold via-glow-light-gold to-cosmic-cyan text-background shadow-[0_0_30px_rgba(255,215,0,0.6)] hover:shadow-[0_0_50px_rgba(255,215,0,0.8)] hover:scale-105 border border-glow-gold/40",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[0_0_15px_rgba(239,68,68,0.4)]",
-        outline: "border-2 border-cosmic-gold/60 bg-transparent hover:bg-cosmic-gold/20 hover:border-glow-light-gold hover:shadow-[0_0_35px_rgba(255,215,0,0.7)] transition-all duration-500",
-        secondary: "bg-gradient-to-r from-cosmic-cyan to-glow-light-gold text-background shadow-[0_0_20px_rgba(0,255,255,0.5)] hover:shadow-[0_0_40px_rgba(0,255,255,0.7)]",
-        ghost: "hover:bg-cosmic-gold/20 hover:text-cosmic-gold hover:shadow-[0_0_25px_rgba(255,215,0,0.4)] transition-all duration-500",
-        link: "text-cosmic-cyan underline-offset-4 hover:underline hover:text-cosmic-gold transition-colors duration-300",
+        default: "bg-gradient-to-r from-cosmic-sapphire via-cosmic-cyan to-cosmic-magenta text-foreground shadow-[0_0_40px_rgba(0,102,255,0.8)] hover:shadow-[0_0_80px_rgba(0,255,255,1)] hover:scale-105 border-2 border-glow-cyan/60",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[0_0_20px_rgba(239,68,68,0.6)]",
+        outline: "border-2 border-cosmic-magenta/70 bg-transparent hover:bg-cosmic-magenta/20 hover:border-glow-magenta hover:shadow-[0_0_50px_rgba(217,0,255,0.9)] transition-all duration-500",
+        secondary: "bg-gradient-to-r from-cosmic-magenta to-divine-rose-gold text-foreground shadow-[0_0_30px_rgba(217,0,255,0.7)] hover:shadow-[0_0_60px_rgba(255,183,246,0.9)]",
+        ghost: "hover:bg-cosmic-sapphire/20 hover:text-cosmic-cyan hover:shadow-[0_0_35px_rgba(0,255,255,0.6)] transition-all duration-500",
+        link: "text-cosmic-cyan underline-offset-4 hover:underline hover:text-cosmic-magenta transition-colors duration-300",
       },
       size: {
         default: "h-11 px-6 py-2",

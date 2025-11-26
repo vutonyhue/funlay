@@ -134,15 +134,17 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Floating golden particles - God rays effect */}
+      {/* Floating rainbow particles - Heavenly divine light rays */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-glow-gold rounded-full particle opacity-70 blur-sm shadow-[0_0_15px_rgba(255,215,0,0.6)]" />
-        <div className="absolute top-1/3 right-1/3 w-2.5 h-2.5 bg-glow-light-gold rounded-full particle opacity-60 blur-sm shadow-[0_0_12px_rgba(255,255,128,0.5)]" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-glow-gold rounded-full particle opacity-80 blur-sm shadow-[0_0_18px_rgba(255,215,0,0.7)]" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-glow-white rounded-full particle opacity-50 blur-sm shadow-[0_0_10px_rgba(255,255,255,0.6)]" style={{ animationDelay: '3s' }} />
-        <div className="absolute bottom-1/3 right-1/2 w-2.5 h-2.5 bg-cosmic-cyan rounded-full particle opacity-60 blur-sm shadow-[0_0_15px_rgba(0,255,255,0.5)]" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute top-2/3 left-1/2 w-2 h-2 bg-glow-light-gold rounded-full particle opacity-70 blur-sm shadow-[0_0_12px_rgba(255,255,128,0.6)]" style={{ animationDelay: '2.5s' }} />
-        <div className="absolute top-1/5 right-1/2 w-2.5 h-2.5 bg-glow-gold rounded-full particle opacity-75 blur-sm shadow-[0_0_16px_rgba(255,215,0,0.6)]" style={{ animationDelay: '0.5s' }} />
+        <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-glow-sapphire rounded-full particle opacity-80 blur-sm shadow-[0_0_25px_rgba(0,102,255,0.9)]" />
+        <div className="absolute top-1/3 right-1/3 w-2.5 h-2.5 bg-glow-cyan rounded-full particle opacity-75 blur-sm shadow-[0_0_22px_rgba(0,255,255,0.9)]" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-1/4 left-1/3 w-3.5 h-3.5 bg-glow-magenta rounded-full particle opacity-85 blur-sm shadow-[0_0_28px_rgba(217,0,255,0.95)]" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-divine-rose-gold rounded-full particle opacity-90 blur-sm shadow-[0_0_20px_rgba(255,183,246,1)]" style={{ animationDelay: '3s' }} />
+        <div className="absolute bottom-1/3 right-1/2 w-3 h-3 bg-glow-gold rounded-full particle opacity-80 blur-sm shadow-[0_0_24px_rgba(255,215,0,0.9)]" style={{ animationDelay: '1.5s' }} />
+        <div className="absolute top-2/3 left-1/2 w-2.5 h-2.5 bg-glow-white rounded-full particle opacity-95 blur-sm shadow-[0_0_26px_rgba(255,255,255,1)]" style={{ animationDelay: '2.5s' }} />
+        <div className="absolute top-1/5 right-1/2 w-3 h-3 bg-glow-sapphire rounded-full particle opacity-85 blur-sm shadow-[0_0_25px_rgba(0,102,255,0.9)]" style={{ animationDelay: '0.5s' }} />
+        <div className="absolute bottom-1/5 left-1/5 w-2 h-2 bg-glow-cyan rounded-full particle opacity-70 blur-sm shadow-[0_0_20px_rgba(0,255,255,0.8)]" style={{ animationDelay: '3.5s' }} />
+        <div className="absolute top-3/5 right-1/5 w-2.5 h-2.5 bg-glow-magenta rounded-full particle opacity-80 blur-sm shadow-[0_0_23px_rgba(217,0,255,0.9)]" style={{ animationDelay: '4s' }} />
       </div>
 
       <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
@@ -152,14 +154,14 @@ const Index = () => {
       <main className="pt-14 lg:pl-64 relative z-10">
         <CategoryChips />
         {!user && (
-          <div className="glass-card mx-4 mt-4 rounded-xl border border-cosmic-gold/40 p-4 shadow-[0_0_40px_rgba(255,215,0,0.4)]">
+          <div className="glass-card mx-4 mt-4 rounded-xl border border-cosmic-magenta/50 p-4 shadow-[0_0_50px_rgba(217,0,255,0.5)]">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <p className="text-foreground font-medium">
-                Join <span className="text-transparent bg-clip-text bg-gradient-to-r from-cosmic-gold via-glow-light-gold to-cosmic-cyan font-bold">FunPlay</span> to upload videos, subscribe to channels, and tip creators!
+                Join <span className="text-transparent bg-clip-text bg-gradient-to-r from-cosmic-sapphire via-cosmic-cyan to-cosmic-magenta font-bold">FunPlay</span> to upload videos, subscribe to channels, and tip creators!
               </p>
               <Button 
                 onClick={() => navigate("/auth")} 
-                className="bg-gradient-to-r from-cosmic-gold via-glow-light-gold to-cosmic-cyan hover:shadow-[0_0_50px_rgba(255,215,0,0.7)] transition-all duration-500 border border-glow-gold/40"
+                className="bg-gradient-to-r from-cosmic-sapphire via-cosmic-cyan to-cosmic-magenta hover:shadow-[0_0_70px_rgba(0,255,255,1)] transition-all duration-500 border border-glow-cyan"
               >
                 Sign In
               </Button>
@@ -169,9 +171,9 @@ const Index = () => {
         
         <div className="p-6">
           {videos.length === 0 ? (
-            <div className="text-center py-20 glass-card rounded-2xl mx-auto max-w-2xl shadow-[0_0_40px_rgba(255,215,0,0.3)]">
-              <p className="text-foreground text-2xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cosmic-gold to-cosmic-cyan">Chưa có video nào</p>
-              <p className="text-sm text-muted-foreground mt-2">Hãy tải video đầu tiên lên và khám phá vũ trụ âm nhạc vàng rực rỡ!</p>
+            <div className="text-center py-20 glass-card rounded-2xl mx-auto max-w-2xl shadow-[0_0_60px_rgba(0,102,255,0.5)]">
+              <p className="text-foreground text-2xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cosmic-sapphire via-cosmic-cyan to-cosmic-magenta">Chưa có video nào</p>
+              <p className="text-sm text-muted-foreground mt-2">Hãy tải video đầu tiên lên và khám phá vũ trụ âm nhạc đầy năng lượng tình yêu!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
