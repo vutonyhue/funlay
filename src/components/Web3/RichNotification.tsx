@@ -12,19 +12,20 @@ interface RichNotificationProps {
 export const RichNotification = ({ show, amount, token, count, onClose }: RichNotificationProps) => {
   useEffect(() => {
     if (show) {
-      // Play angel voice notification
+      // Play cute baby angel voice notification
       const speakNotification = () => {
-        const utterance = new SpeechSynthesisUtterance("Chúc mừng bạn nhận được tiền!");
-        utterance.pitch = 2; // High pitch for angel/baby voice
-        utterance.rate = 0.9;
+        const utterance = new SpeechSynthesisUtterance("Chúc mừng bạn nhận được tiền! Bạn thật giàu có!");
+        utterance.pitch = 2.0; // Very high pitch for cute baby angel voice
+        utterance.rate = 0.85; // Slightly slower for cuteness
         utterance.volume = 1;
+        utterance.lang = 'vi-VN'; // Vietnamese voice
         window.speechSynthesis.speak(utterance);
       };
       speakNotification();
 
       const timer = setTimeout(() => {
         onClose();
-      }, 5000);
+      }, 6000);
       return () => clearTimeout(timer);
     }
   }, [show, onClose]);
@@ -33,60 +34,32 @@ export const RichNotification = ({ show, amount, token, count, onClose }: RichNo
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, y: -50, scale: 0.8 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -50, scale: 0.8 }}
-          className="fixed top-24 right-4 z-50 glass-card p-6 rounded-2xl shadow-2xl border-2 border-golden/30"
+          initial={{ opacity: 0, y: -50, scale: 0.5 }}
+          animate={{ 
+            opacity: 1, 
+            y: 0, 
+            scale: 1,
+          }}
+          exit={{ opacity: 0, y: -50, scale: 0.5 }}
+          className="fixed top-24 right-4 z-50 p-8 rounded-3xl shadow-2xl overflow-hidden"
           style={{
-            background: "rgba(10, 14, 44, 0.95)",
-            backdropFilter: "blur(20px)",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 247, 230, 0.95))",
+            backdropFilter: "blur(30px)",
+            border: "3px solid transparent",
+            backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, #FFD700, #FFA500, #FFFF00, #FFD700)",
+            backgroundOrigin: "border-box",
+            backgroundClip: "padding-box, border-box",
+            boxShadow: "0 0 60px rgba(255, 215, 0, 0.8), 0 0 100px rgba(255, 165, 0, 0.6), 0 0 140px rgba(255, 255, 0, 0.4)",
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 relative z-10">
             <motion.span
               animate={{
-                scale: [1, 1.2, 1],
+                scale: [1, 1.3, 1],
                 textShadow: [
-                  "0 0 10px #FFD700",
-                  "0 0 30px #FFD700, 0 0 50px #FFD700",
-                  "0 0 10px #FFD700",
-                ],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="text-[#FFD700] font-black text-4xl"
-              style={{
-                textShadow: "0 0 20px #FFD700, 0 0 40px #FFD700",
-              }}
-            >
-              Rich
-            </motion.span>
-            <motion.span
-              animate={{
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 0.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="text-[#FFD700] font-bold text-3xl"
-              style={{
-                textShadow: "0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFFF00",
-              }}
-            >
-              +{amount} {token}
-            </motion.span>
-            <motion.span
-              animate={{
-                scale: [1, 1.2, 1],
-                textShadow: [
-                  "0 0 10px #00FF00",
-                  "0 0 30px #00FF00, 0 0 50px #7FFF00",
-                  "0 0 10px #00FF00",
+                  "0 0 20px #FFD700, 0 0 40px #FFA500",
+                  "0 0 40px #FFD700, 0 0 80px #FFA500, 0 0 120px #FFFF00",
+                  "0 0 20px #FFD700, 0 0 40px #FFA500",
                 ],
               }}
               transition={{
@@ -94,21 +67,74 @@ export const RichNotification = ({ show, amount, token, count, onClose }: RichNo
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="text-[#00FF00] font-black text-2xl ml-3"
+              className="font-black text-5xl"
               style={{
-                textShadow: "0 0 20px #00FF00, 0 0 40px #7FFF00",
+                background: "linear-gradient(135deg, #FFD700, #FFA500, #FFFF00)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                filter: "drop-shadow(0 0 30px rgba(255, 215, 0, 1))",
+              }}
+            >
+              RICH
+            </motion.span>
+            <motion.span
+              animate={{
+                scale: [1, 1.15, 1],
+              }}
+              transition={{
+                duration: 0.6,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="font-black text-4xl"
+              style={{
+                background: "linear-gradient(135deg, #FFD700, #FFFF00, #FFA500)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                filter: "drop-shadow(0 0 20px rgba(255, 215, 0, 0.9))",
+              }}
+            >
+              +{amount} {token}
+            </motion.span>
+            <motion.span
+              animate={{
+                scale: [1, 1.25, 1],
+                textShadow: [
+                  "0 0 15px #00FF00, 0 0 30px #7FFF00",
+                  "0 0 40px #00FF00, 0 0 80px #7FFF00, 0 0 120px #00FF00",
+                  "0 0 15px #00FF00, 0 0 30px #7FFF00",
+                ],
+              }}
+              transition={{
+                duration: 0.7,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="font-black text-3xl ml-2"
+              style={{
+                color: "#00FF00",
+                textShadow: "0 0 30px #00FF00, 0 0 60px #7FFF00",
+                filter: "drop-shadow(0 0 20px rgba(0, 255, 0, 1))",
               }}
             >
               #{count}
             </motion.span>
           </div>
           <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-sm text-golden mt-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-base font-bold mt-3 relative z-10"
+            style={{
+              background: "linear-gradient(135deg, #FFD700, #FFA500)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
           >
-            💰 Bạn vừa nhận được tiền!
+            💰✨ Chúc mừng! Bạn vừa nhận được tiền! 💎🎉
           </motion.p>
           
           {/* Golden Fireworks effects */}

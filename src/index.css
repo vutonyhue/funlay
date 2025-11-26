@@ -179,6 +179,32 @@ All colors MUST be HSL.
     position: relative;
     z-index: 1;
   }
+
+  /* Cursor light beam sweep effect */
+  body::after {
+    content: '';
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(
+      circle at center,
+      rgba(0, 231, 255, 0.15) 0%,
+      rgba(122, 43, 255, 0.1) 25%,
+      rgba(255, 0, 229, 0.08) 50%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    filter: blur(40px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    mix-blend-mode: screen;
+  }
+
+  body.cursor-active::after {
+    opacity: 1;
+  }
 }
 
 /* Cosmic Divine Animations */
