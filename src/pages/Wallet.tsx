@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,8 @@ const Wallet = () => {
   const [showRichNotification, setShowRichNotification] = useState(false);
   const [receivedAmount, setReceivedAmount] = useState("");
   const [receivedToken, setReceivedToken] = useState("");
+  const [receivedCount, setReceivedCount] = useState(0);
+  const [receivedHistory, setReceivedHistory] = useState<Array<{amount: string, token: string, timestamp: Date}>>([]);
 
   useEffect(() => {
     checkWalletConnection();
@@ -98,6 +101,15 @@ const Wallet = () => {
         (payload) => {
           console.log('New transaction received:', payload);
           const transaction = payload.new;
+          
+          // Update count and history
+          const newCount = receivedCount + 1;
+          setReceivedCount(newCount);
+          setReceivedHistory(prev => [{
+            amount: transaction.amount.toString(),
+            token: transaction.token_type,
+            timestamp: new Date()
+          }, ...prev]);
           
           // Show Rich notification
           setReceivedAmount(transaction.amount.toString());
@@ -454,8 +466,28 @@ const Wallet = () => {
         show={showRichNotification}
         amount={receivedAmount}
         token={receivedToken}
+        count={receivedCount}
         onClose={() => setShowRichNotification(false)}
       />
+      
+      {/* Received History Notification Badge */}
+      {receivedHistory.length > 0 && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="fixed top-20 right-4 z-50 bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FFD700] text-background px-4 py-2 rounded-full shadow-2xl"
+          style={{
+            boxShadow: "0 0 20px #FFD700, 0 0 40px #FFA500",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-bold">💰 Lịch sử nhận:</span>
+            <span className="text-[#00FF00] font-black text-xl" style={{ textShadow: "0 0 10px #00FF00" }}>
+              {receivedHistory.length}
+            </span>
+          </div>
+        </motion.div>
+      )}
       
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
@@ -574,7 +606,7 @@ const Wallet = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold">{token.balance}</p>
+                          <p className="font-bold">{parseFloat(token.balance).toFixed(3)}</p>
                           <p className="text-sm text-muted-foreground">{token.symbol}</p>
                           {prices[token.symbol] && (
                             <p className="text-xs text-muted-foreground">
