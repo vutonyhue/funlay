@@ -8,71 +8,71 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Cosmic Aurora Theme - Heavenly Bliss */
-    --background: 270 100% 5%;
+    /* Golden Dark Blue Theme - Heavenly Golden City */
+    --background: 225 100% 7%;
     --foreground: 0 0% 100%;
 
-    --card: 270 80% 8%;
+    --card: 225 100% 10%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 270 80% 8%;
+    --popover: 225 100% 10%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 285 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 45 100% 50%;
+    --primary-foreground: 225 100% 10%;
 
-    --secondary: 330 100% 65%;
+    --secondary: 180 100% 50%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 270 60% 15%;
-    --muted-foreground: 270 20% 70%;
+    --muted: 225 80% 15%;
+    --muted-foreground: 45 30% 80%;
 
-    --accent: 50 100% 50%;
-    --accent-foreground: 270 100% 10%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 225 100% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 270 50% 20%;
-    --input: 270 50% 20%;
-    --ring: 285 100% 50%;
+    --border: 45 80% 40%;
+    --input: 225 80% 20%;
+    --ring: 45 100% 50%;
 
     --radius: 1rem;
 
-    --sidebar-background: 270 90% 6%;
+    --sidebar-background: 225 100% 8%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 285 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 60% 15%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 225 100% 10%;
+    --sidebar-accent: 225 80% 15%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 270 50% 20%;
-    --sidebar-ring: 285 100% 50%;
+    --sidebar-border: 45 80% 40%;
+    --sidebar-ring: 45 100% 50%;
 
-    /* Heavenly Aurora Palette */
-    --cosmic-cyan: 185 100% 50%;
-    --cosmic-purple: 270 100% 58%;
-    --cosmic-magenta: 320 100% 50%;
-    --cosmic-gold: 50 100% 50%;
+    /* Golden Dark Blue Palette */
+    --cosmic-cyan: 180 100% 50%;
+    --cosmic-purple: 225 100% 15%;
+    --cosmic-magenta: 45 100% 50%;
+    --cosmic-gold: 45 100% 50%;
     
     /* Secondary Divine Colors */
-    --divine-pink: 335 100% 62%;
-    --divine-orange: 30 100% 50%;
-    --divine-lavender: 270 50% 75%;
+    --divine-pink: 45 100% 70%;
+    --divine-orange: 45 100% 60%;
+    --divine-lavender: 45 80% 85%;
     
     /* Glow Effects */
-    --glow-gold: 50 100% 50%;
-    --glow-magenta: 320 100% 50%;
+    --glow-gold: 45 100% 50%;
+    --glow-light-gold: 50 100% 75%;
     --glow-cyan: 180 100% 50%;
     --glow-white: 0 0% 100%;
     
     /* Gradients */
-    --gradient-aurora: linear-gradient(135deg, hsl(185 100% 50%), hsl(270 100% 58%), hsl(320 100% 50%), hsl(50 100% 50%));
-    --gradient-cosmic-bg: radial-gradient(ellipse at top, hsl(270 80% 15% / 0.3), transparent 50%), radial-gradient(ellipse at bottom, hsl(320 100% 20% / 0.2), transparent 50%);
+    --gradient-aurora: linear-gradient(135deg, hsl(45 100% 50%), hsl(180 100% 50%), hsl(225 100% 15%));
+    --gradient-cosmic-bg: radial-gradient(ellipse at top, hsl(45 100% 20% / 0.2), transparent 50%), radial-gradient(ellipse at bottom, hsl(45 80% 10% / 0.15), transparent 50%);
     
     /* Shadows & Glows */
-    --shadow-divine: 0 0 40px hsl(50 100% 50% / 0.4), 0 0 80px hsl(320 100% 50% / 0.3), 0 8px 32px hsl(0 0% 0% / 0.5);
-    --shadow-card-glow: 0 0 30px hsl(285 100% 50% / 0.3), inset 0 0 40px hsl(0 0% 100% / 0.05);
-    --shadow-hover-sparkle: 0 0 60px hsl(50 100% 50% / 0.6), 0 0 100px hsl(320 100% 50% / 0.4), 0 0 140px hsl(185 100% 50% / 0.3);
+    --shadow-divine: 0 0 60px hsl(45 100% 50% / 0.6), 0 0 100px hsl(45 100% 60% / 0.4), 0 8px 32px hsl(0 0% 0% / 0.5);
+    --shadow-card-glow: 0 0 40px hsl(45 100% 50% / 0.4), inset 0 0 60px hsl(45 100% 70% / 0.08);
+    --shadow-hover-sparkle: 0 0 80px hsl(45 100% 50% / 0.8), 0 0 120px hsl(45 100% 70% / 0.6), 0 0 160px hsl(180 100% 50% / 0.4);
     
     /* Transitions */
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -80,64 +80,64 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 270 100% 5%;
+    --background: 225 100% 7%;
     --foreground: 0 0% 100%;
 
-    --card: 270 80% 8%;
+    --card: 225 100% 10%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 270 80% 8%;
+    --popover: 225 100% 10%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 285 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 45 100% 50%;
+    --primary-foreground: 225 100% 10%;
 
-    --secondary: 330 100% 65%;
+    --secondary: 180 100% 50%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 270 60% 15%;
-    --muted-foreground: 270 20% 70%;
+    --muted: 225 80% 15%;
+    --muted-foreground: 45 30% 80%;
 
-    --accent: 50 100% 50%;
-    --accent-foreground: 270 100% 10%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 225 100% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 270 50% 20%;
-    --input: 270 50% 20%;
-    --ring: 285 100% 50%;
+    --border: 45 80% 40%;
+    --input: 225 80% 20%;
+    --ring: 45 100% 50%;
 
-    --sidebar-background: 270 90% 6%;
+    --sidebar-background: 225 100% 8%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 285 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 60% 15%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 225 100% 10%;
+    --sidebar-accent: 225 80% 15%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 270 50% 20%;
-    --sidebar-ring: 285 100% 50%;
+    --sidebar-border: 45 80% 40%;
+    --sidebar-ring: 45 100% 50%;
 
-    /* Same cosmic colors for dark mode */
-    --cosmic-cyan: 185 100% 50%;
-    --cosmic-purple: 270 100% 58%;
-    --cosmic-magenta: 320 100% 50%;
-    --cosmic-gold: 50 100% 50%;
+    /* Same golden dark blue colors for dark mode */
+    --cosmic-cyan: 180 100% 50%;
+    --cosmic-purple: 225 100% 15%;
+    --cosmic-magenta: 45 100% 50%;
+    --cosmic-gold: 45 100% 50%;
     
-    --divine-pink: 335 100% 62%;
-    --divine-orange: 30 100% 50%;
-    --divine-lavender: 270 50% 75%;
+    --divine-pink: 45 100% 70%;
+    --divine-orange: 45 100% 60%;
+    --divine-lavender: 45 80% 85%;
     
-    --glow-gold: 50 100% 50%;
-    --glow-magenta: 320 100% 50%;
+    --glow-gold: 45 100% 50%;
+    --glow-light-gold: 50 100% 75%;
     --glow-cyan: 180 100% 50%;
     --glow-white: 0 0% 100%;
     
-    --gradient-aurora: linear-gradient(135deg, hsl(185 100% 50%), hsl(270 100% 58%), hsl(320 100% 50%), hsl(50 100% 50%));
-    --gradient-cosmic-bg: radial-gradient(ellipse at top, hsl(270 80% 15% / 0.3), transparent 50%), radial-gradient(ellipse at bottom, hsl(320 100% 20% / 0.2), transparent 50%);
+    --gradient-aurora: linear-gradient(135deg, hsl(45 100% 50%), hsl(180 100% 50%), hsl(225 100% 15%));
+    --gradient-cosmic-bg: radial-gradient(ellipse at top, hsl(45 100% 20% / 0.2), transparent 50%), radial-gradient(ellipse at bottom, hsl(45 80% 10% / 0.15), transparent 50%);
     
-    --shadow-divine: 0 0 40px hsl(50 100% 50% / 0.4), 0 0 80px hsl(320 100% 50% / 0.3), 0 8px 32px hsl(0 0% 0% / 0.5);
-    --shadow-card-glow: 0 0 30px hsl(285 100% 50% / 0.3), inset 0 0 40px hsl(0 0% 100% / 0.05);
-    --shadow-hover-sparkle: 0 0 60px hsl(50 100% 50% / 0.6), 0 0 100px hsl(320 100% 50% / 0.4), 0 0 140px hsl(185 100% 50% / 0.3);
+    --shadow-divine: 0 0 60px hsl(45 100% 50% / 0.6), 0 0 100px hsl(45 100% 60% / 0.4), 0 8px 32px hsl(0 0% 0% / 0.5);
+    --shadow-card-glow: 0 0 40px hsl(45 100% 50% / 0.4), inset 0 0 60px hsl(45 100% 70% / 0.08);
+    --shadow-hover-sparkle: 0 0 80px hsl(45 100% 50% / 0.8), 0 0 120px hsl(45 100% 70% / 0.6), 0 0 160px hsl(180 100% 50% / 0.4);
     
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-glow: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -178,11 +178,11 @@ All colors MUST be HSL.
 }
 
 @keyframes rainbow-border {
-  0% { border-color: hsl(185 100% 50%); box-shadow: 0 0 20px hsl(185 100% 50% / 0.5); }
-  25% { border-color: hsl(270 100% 58%); box-shadow: 0 0 20px hsl(270 100% 58% / 0.5); }
-  50% { border-color: hsl(320 100% 50%); box-shadow: 0 0 20px hsl(320 100% 50% / 0.5); }
-  75% { border-color: hsl(50 100% 50%); box-shadow: 0 0 20px hsl(50 100% 50% / 0.5); }
-  100% { border-color: hsl(185 100% 50%); box-shadow: 0 0 20px hsl(185 100% 50% / 0.5); }
+  0% { border-color: hsl(45 100% 50%); box-shadow: 0 0 30px hsl(45 100% 50% / 0.8); }
+  25% { border-color: hsl(50 100% 70%); box-shadow: 0 0 30px hsl(50 100% 70% / 0.8); }
+  50% { border-color: hsl(180 100% 50%); box-shadow: 0 0 30px hsl(180 100% 50% / 0.8); }
+  75% { border-color: hsl(45 100% 60%); box-shadow: 0 0 30px hsl(45 100% 60% / 0.8); }
+  100% { border-color: hsl(45 100% 50%); box-shadow: 0 0 30px hsl(45 100% 50% / 0.8); }
 }
 
 /* Glassmorphism utility classes */
@@ -202,10 +202,10 @@ All colors MUST be HSL.
 /* Holographic foil texture */
 .holographic {
   background: linear-gradient(135deg, 
-    rgba(0, 231, 255, 0.1), 
-    rgba(122, 43, 255, 0.1), 
-    rgba(255, 0, 229, 0.1), 
-    rgba(255, 215, 0, 0.1)
+    rgba(255, 215, 0, 0.15), 
+    rgba(255, 255, 128, 0.1), 
+    rgba(0, 255, 255, 0.12), 
+    rgba(255, 215, 0, 0.15)
   );
   background-size: 300% 300%;
   animation: shimmer 8s ease-in-out infinite;

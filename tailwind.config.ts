@@ -70,7 +70,7 @@ export default {
         },
         glow: {
           gold: "hsl(var(--glow-gold))",
-          magenta: "hsl(var(--glow-magenta))",
+          "light-gold": "hsl(var(--glow-light-gold))",
           cyan: "hsl(var(--glow-cyan))",
           white: "hsl(var(--glow-white))",
         },
