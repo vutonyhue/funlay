@@ -478,8 +478,13 @@ const Wallet = () => {
 
   if (!isConnected) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-md mx-auto">
+      <div 
+        className="container mx-auto px-4 py-8 min-h-screen"
+        style={{
+          background: "linear-gradient(135deg, #00E7FF 0%, #7A2BFF 33%, #FF00E5 66%, #FFD700 100%)"
+        }}
+      >
+        <Card className="max-w-md mx-auto glass-card">
           <CardHeader className="text-center">
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
               <WalletIcon className="w-8 h-8 text-primary" />
@@ -506,7 +511,12 @@ const Wallet = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 relative">
+    <div 
+      className="container mx-auto px-4 py-8 relative min-h-screen"
+      style={{
+        background: "linear-gradient(135deg, #00E7FF 0%, #7A2BFF 33%, #FF00E5 66%, #FFD700 100%)"
+      }}
+    >
       {/* Back Button */}
       <Button
         variant="ghost"
@@ -547,9 +557,19 @@ const Wallet = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold">Ví của tôi</h1>
+              <h1 
+                className="text-3xl font-bold"
+                style={{
+                  background: "linear-gradient(135deg, #00E7FF, #7A2BFF, #FF00E5, #FFD700)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Ví của tôi
+              </h1>
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-muted-foreground">
+                <p className="text-background/80 font-medium">
                   {address.slice(0, 6)}...{address.slice(-4)}
                 </p>
                 <Button

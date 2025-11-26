@@ -96,7 +96,7 @@ export const RichNotification = ({ show, amount, token, count, onClose }: RichNo
                 filter: "drop-shadow(0 0 20px rgba(255, 215, 0, 0.9))",
               }}
             >
-              +{amount} {token}
+              +{parseFloat(amount).toFixed(3)} {token}
             </motion.span>
             <motion.span
               animate={{
