@@ -89,7 +89,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg px-3 py-2 flex items-center justify-center shadow-lg">
             <Play className="h-6 w-6 text-white fill-white" />
           </div>
-          <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-[#00E7FF] to-[#00B8D4] bg-clip-text text-transparent">
+          <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-[#00E7FF] via-[#00FFFF] to-[#00E7FF] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(0,231,255,0.8)] animate-pulse">
             FUN Play
           </span>
         </div>
