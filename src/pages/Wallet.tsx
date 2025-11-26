@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet as WalletIcon, Send, History, Loader2, Copy, QrCode, ExternalLink } from "lucide-react";
+import { Wallet as WalletIcon, Send, History, Loader2, Copy, QrCode, ExternalLink, Search, Filter } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { sendTip, getTransactionHistory } from "@/lib/tipping";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,6 +79,9 @@ const Wallet = () => {
   const [receivedToken, setReceivedToken] = useState("");
   const [receivedCount, setReceivedCount] = useState(0);
   const [receivedTransactions, setReceivedTransactions] = useState<any[]>([]);
+  const [filteredReceivedTxs, setFilteredReceivedTxs] = useState<any[]>([]);
+  const [receivedFilterToken, setReceivedFilterToken] = useState<string>("all");
+  const [receivedSearchTerm, setReceivedSearchTerm] = useState("");
 
   useEffect(() => {
     checkWalletConnection();
@@ -363,11 +366,33 @@ const Wallet = () => {
 
       if (error) throw error;
       setReceivedTransactions(data || []);
+      setFilteredReceivedTxs(data || []);
       setReceivedCount(data?.length || 0);
     } catch (error) {
       console.error("Error loading received transactions:", error);
     }
   };
+
+  // Filter and search received transactions
+  useEffect(() => {
+    let filtered = receivedTransactions;
+    
+    // Filter by token
+    if (receivedFilterToken !== "all") {
+      filtered = filtered.filter(tx => tx.token_type === receivedFilterToken);
+    }
+    
+    // Search by TxID or sender address
+    if (receivedSearchTerm) {
+      const searchLower = receivedSearchTerm.toLowerCase();
+      filtered = filtered.filter(tx => 
+        tx.tx_hash?.toLowerCase().includes(searchLower) ||
+        tx.from_address?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    setFilteredReceivedTxs(filtered);
+  }, [receivedTransactions, receivedFilterToken, receivedSearchTerm]);
 
   const handleSendToken = async () => {
     if (!isConnected) {
@@ -806,14 +831,53 @@ const Wallet = () => {
                 <CardDescription>Tất cả tiền đã nhận vào ví</CardDescription>
               </CardHeader>
               <CardContent>
-                {receivedTransactions.length === 0 ? (
+                {/* Filter and Search Controls */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                  <div className="flex-1">
+                    <Label htmlFor="search-received" className="text-xs mb-1 block">Tìm kiếm (TxID hoặc địa chỉ)</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="search-received"
+                        placeholder="Tìm theo TxID hoặc địa chỉ gửi..."
+                        value={receivedSearchTerm}
+                        onChange={(e) => setReceivedSearchTerm(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full sm:w-[180px]">
+                    <Label htmlFor="filter-token" className="text-xs mb-1 block">Lọc theo token</Label>
+                    <Select value={receivedFilterToken} onValueChange={setReceivedFilterToken}>
+                      <SelectTrigger id="filter-token">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tất cả</SelectItem>
+                        <SelectItem value="BNB">BNB</SelectItem>
+                        <SelectItem value="USDT">USDT</SelectItem>
+                        <SelectItem value="CAMLY">CAMLY</SelectItem>
+                        <SelectItem value="BTC">BTC</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {filteredReceivedTxs.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Chưa nhận tiền nào</p>
+                    <p>
+                      {receivedTransactions.length === 0 
+                        ? "Chưa nhận tiền nào" 
+                        : "Không tìm thấy giao dịch phù hợp"}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {receivedTransactions.map((tx) => (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Hiển thị {filteredReceivedTxs.length} / {receivedTransactions.length} giao dịch
+                    </p>
+                    {filteredReceivedTxs.map((tx) => (
                       <motion.div
                         key={tx.id}
                         initial={{ opacity: 0, y: 20 }}
