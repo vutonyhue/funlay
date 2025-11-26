@@ -65,13 +65,6 @@ export const ShareModal = ({
       case "zalo":
         shareLink = `https://zalo.me/share?url=${encodedUrl}`;
         break;
-      case "youtube":
-        // YouTube doesn't have direct sharing, but users can copy link and share
-        toast({
-          title: "Copy link",
-          description: "Copy link video và chia sẻ lên YouTube của bạn",
-        });
-        return;
     }
 
     if (shareLink) {
@@ -81,93 +74,94 @@ export const ShareModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md glass-card border-2 border-cosmic-cyan/30">
+      <DialogContent className="sm:max-w-lg glass-card border-2 border-cosmic-cyan/30">
         <DialogHeader>
-          <DialogTitle
-            className="text-2xl font-bold"
-            style={{
-              background: "linear-gradient(135deg, #00E7FF, #7A2BFF, #FF00E5, #FFD700)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
+          <DialogTitle className="text-lg font-semibold text-foreground">
             Chia sẻ video
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Copy Link Section */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Link video</label>
-            <div className="flex gap-2">
+        <div className="space-y-6">
+          {/* Copy Link Section - Prominent YouTube Style */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-cosmic-cyan/20">
               <Input
                 value={shareUrl}
                 readOnly
-                className="flex-1 bg-muted/50 border-cosmic-cyan/30"
+                className="flex-1 bg-transparent border-0 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 pr-2"
               />
               <Button
                 onClick={handleCopyLink}
-                size="icon"
-                className="bg-cosmic-cyan hover:bg-cosmic-cyan/90 shadow-[0_0_30px_rgba(0,255,255,0.5)]"
+                className="bg-cosmic-cyan hover:bg-cosmic-cyan/90 shadow-[0_0_20px_rgba(0,231,255,0.4)] px-6 font-semibold"
               >
-                <Copy className="h-4 w-4" />
+                Sao chép
               </Button>
             </div>
           </div>
 
           {/* Social Media Share Buttons */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Chia sẻ lên</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 border-cosmic-sapphire/50 hover:bg-cosmic-sapphire/20"
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-foreground">Chia sẻ</label>
+            <div className="flex items-center gap-3 overflow-x-auto pb-2">
+              <button
                 onClick={() => handleShare("facebook")}
+                className="flex flex-col items-center gap-2 min-w-[70px] group"
               >
-                <Facebook className="h-4 w-4 text-cosmic-sapphire" />
-                <span className="text-sm">Facebook</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 border-cosmic-cyan/50 hover:bg-cosmic-cyan/20"
-                onClick={() => handleShare("twitter")}
-              >
-                <Twitter className="h-4 w-4 text-cosmic-cyan" />
-                <span className="text-sm">Twitter</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 border-cosmic-magenta/50 hover:bg-cosmic-magenta/20"
-                onClick={() => handleShare("telegram")}
-              >
-                <Send className="h-4 w-4 text-cosmic-magenta" />
-                <span className="text-sm">Telegram</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 border-glow-gold/50 hover:bg-glow-gold/20"
+                <div className="w-14 h-14 rounded-full bg-[#1877F2] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                  <Facebook className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs text-foreground/80 group-hover:text-foreground">Facebook</span>
+              </button>
+              
+              <button
                 onClick={() => handleShare("whatsapp")}
+                className="flex flex-col items-center gap-2 min-w-[70px] group"
               >
-                <MessageCircle className="h-4 w-4 text-glow-gold" />
-                <span className="text-sm">WhatsApp</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 border-divine-rose-gold/50 hover:bg-divine-rose-gold/20"
+                <div className="w-14 h-14 rounded-full bg-[#25D366] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                  <MessageCircle className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs text-foreground/80 group-hover:text-foreground">WhatsApp</span>
+              </button>
+
+              <button
+                onClick={() => handleShare("twitter")}
+                className="flex flex-col items-center gap-2 min-w-[70px] group"
+              >
+                <div className="w-14 h-14 rounded-full bg-[#000000] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                  <Twitter className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs text-foreground/80 group-hover:text-foreground">X</span>
+              </button>
+
+              <button
+                onClick={() => handleShare("telegram")}
+                className="flex flex-col items-center gap-2 min-w-[70px] group"
+              >
+                <div className="w-14 h-14 rounded-full bg-[#0088cc] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                  <Send className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs text-foreground/80 group-hover:text-foreground">Telegram</span>
+              </button>
+
+              <button
                 onClick={() => handleShare("zalo")}
+                className="flex flex-col items-center gap-2 min-w-[70px] group"
               >
-                <MessageCircle className="h-4 w-4 text-divine-rose-gold" />
-                <span className="text-sm">Zalo</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 border-glow-white/50 hover:bg-glow-white/20"
+                <div className="w-14 h-14 rounded-full bg-[#0068FF] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                  <MessageCircle className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs text-foreground/80 group-hover:text-foreground">Zalo</span>
+              </button>
+
+              <button
                 onClick={() => setShowQR(!showQR)}
+                className="flex flex-col items-center gap-2 min-w-[70px] group"
               >
-                <QrCode className="h-4 w-4 text-glow-white" />
-                <span className="text-sm">QR Code</span>
-              </Button>
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cosmic-cyan to-cosmic-magenta flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                  <QrCode className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xs text-foreground/80 group-hover:text-foreground">QR Code</span>
+              </button>
             </div>
           </div>
 
