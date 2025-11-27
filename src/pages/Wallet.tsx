@@ -22,7 +22,7 @@ import { PriceChart } from "@/components/Web3/PriceChart";
 import { PortfolioTracker } from "@/components/Web3/PortfolioTracker";
 import { Badge } from "@/components/ui/badge";
 import { RichNotification } from "@/components/Web3/RichNotification";
-import camlyCoinLogo from "@/assets/camly-coin-rainbow.png";
+import camlyCoinLogo from "@/assets/camly-coin-logo.png";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { requestNotificationPermission, showLocalNotification } from "@/lib/pushNotifications";

@@ -13,13 +13,13 @@ interface RichNotificationProps {
 export const RichNotification = ({ show, amount, token, count, onClose }: RichNotificationProps) => {
   useEffect(() => {
     if (show) {
-      // Play cute baby angel voice notification
+      // Play cute baby Aliens Angel voice saying "RICH RICH RICH"
       const speakNotification = () => {
-        const utterance = new SpeechSynthesisUtterance("Chúc mừng bạn nhận được tiền! Bạn thật giàu có!");
+        const utterance = new SpeechSynthesisUtterance("RICH RICH RICH");
         utterance.pitch = 2.0; // Very high pitch for cute baby angel voice
-        utterance.rate = 0.85; // Slightly slower for cuteness
+        utterance.rate = 0.9; // Slightly slower for cuteness
         utterance.volume = 1;
-        utterance.lang = 'vi-VN'; // Vietnamese voice
+        utterance.lang = 'en-US'; // English for "RICH"
         window.speechSynthesis.speak(utterance);
       };
       speakNotification();
@@ -169,7 +169,7 @@ export const RichNotification = ({ show, amount, token, count, onClose }: RichNo
                 filter: "drop-shadow(0 0 20px rgba(0, 255, 0, 1))",
               }}
             >
-              #{count}
+              {count}
             </motion.span>
           </div>
           <motion.p

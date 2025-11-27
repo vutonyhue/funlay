@@ -23,6 +23,7 @@ import Studio from "./pages/Studio";
 import InstallPWA from "./pages/InstallPWA";
 import { wagmiConfig } from '@/lib/web3Config';
 import { useCursorBeam } from './hooks/useCursorBeam';
+import { GlobalPaymentNotifications } from './components/Web3/GlobalPaymentNotifications';
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ function AppContent() {
   
   return (
     <>
+      <GlobalPaymentNotifications />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
