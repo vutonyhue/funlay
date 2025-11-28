@@ -29,22 +29,22 @@ export const useHonobarStats = () => {
         { count: videosCount },
         { data: viewsData },
         { count: commentsCount },
-        { data: rewardsData },
+        { data: profilesData },
         { count: subscriptionsCount },
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("videos").select("*", { count: "exact", head: true }),
         supabase.from("videos").select("view_count"),
         supabase.from("comments").select("*", { count: "exact", head: true }),
-        supabase.from("wallet_transactions").select("amount, status").eq("status", "success"),
+        supabase.from("profiles").select("total_camly_rewards"),
         supabase.from("subscriptions").select("*", { count: "exact", head: true }),
       ]);
 
       // Calculate total views
       const totalViews = viewsData?.reduce((sum, video) => sum + (video.view_count || 0), 0) || 0;
 
-      // Calculate total rewards (sum of all successful transactions)
-      const totalRewards = rewardsData?.reduce((sum, tx) => sum + parseFloat(tx.amount.toString()), 0) || 0;
+      // Calculate total rewards (sum of all users' total_camly_rewards)
+      const totalRewards = profilesData?.reduce((sum, profile) => sum + (profile.total_camly_rewards || 0), 0) || 0;
 
       setStats({
         totalUsers: usersCount || 0,
