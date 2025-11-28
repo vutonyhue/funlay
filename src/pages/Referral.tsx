@@ -86,7 +86,7 @@ export default function Referral() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
-              className="bg-gradient-to-br from-[#3a3a3a] to-[#2a2a2a] border-2 border-cyan-500/40 rounded-xl p-6 text-center"
+              className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-2 border-cyan-500/50 rounded-xl p-6 text-center shadow-[0_0_20px_rgba(0,231,255,0.3)]"
             >
               <Users className="w-8 h-8 text-cyan-400 mx-auto mb-3" />
               <div className="text-3xl font-bold text-cyan-400">{stats.totalReferrals}</div>
@@ -97,7 +97,7 @@ export default function Referral() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="bg-gradient-to-br from-[#3a3a3a] to-[#2a2a2a] border-2 border-yellow-500/60 rounded-xl p-6 text-center shadow-[0_0_30px_rgba(255,215,0,0.3)]"
+              className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-2 border-yellow-500/60 rounded-xl p-6 text-center shadow-[0_0_30px_rgba(0,231,255,0.3)]"
             >
               <Gift className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
               <div className="text-3xl font-bold text-yellow-400">{stats.totalEarned.toFixed(3)}</div>
@@ -108,7 +108,7 @@ export default function Referral() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
-              className="bg-gradient-to-br from-[#3a3a3a] to-[#2a2a2a] border-2 border-green-500/40 rounded-xl p-6 text-center"
+              className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-2 border-green-500/50 rounded-xl p-6 text-center shadow-[0_0_20px_rgba(0,231,255,0.3)]"
             >
               <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-3" />
               <div className="text-3xl font-bold text-green-400">{stats.activeReferrals}</div>
@@ -121,7 +121,7 @@ export default function Referral() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-[#3a3a3a] to-[#2a2a2a] border-2 border-gray-600/40 rounded-xl p-6 mb-8"
+            className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-2 border-cyan-400/50 rounded-xl p-6 mb-8 shadow-[0_0_20px_rgba(0,231,255,0.3)]"
           >
             <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
               <Users className="w-6 h-6 text-cyan-400" />
@@ -131,7 +131,7 @@ export default function Referral() {
               <Input
                 value={referralLink}
                 readOnly
-                className="bg-[#2a2a2a] border-gray-600 text-foreground"
+                className="bg-cyan-500/10 border-cyan-400/50 text-foreground"
               />
               <Button
                 onClick={copyReferralLink}
@@ -154,7 +154,7 @@ export default function Referral() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-gradient-to-br from-[#3a3a3a] to-[#2a2a2a] border-2 border-gray-600/40 rounded-xl p-6"
+            className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-2 border-cyan-400/50 rounded-xl p-6 shadow-[0_0_20px_rgba(0,231,255,0.3)]"
           >
             <h2 className="text-xl font-bold text-foreground mb-4">Cách Thức Hoạt Động</h2>
             <div className="space-y-4">

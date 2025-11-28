@@ -61,11 +61,11 @@ export const Honobar = () => {
         transition={{ duration: 0.5, type: "spring" }}
         className="absolute top-4 right-4 z-20"
       >
-        <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-[#2a2a2a]/95 backdrop-blur-xl border-2 border-gray-700/50">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="animate-pulse bg-gray-700/30 rounded-lg h-16 w-20" />
-          ))}
-        </div>
+      <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/20 backdrop-blur-xl border-2 border-cyan-400/50 shadow-[0_0_30px_rgba(0,231,255,0.4)]">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="animate-pulse bg-cyan-400/20 rounded-lg h-16 w-20" />
+        ))}
+      </div>
       </motion.div>
     );
   }
@@ -77,7 +77,7 @@ export const Honobar = () => {
       transition={{ duration: 0.5, type: "spring" }}
       className="absolute top-4 right-4 z-20"
     >
-      <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-[#2a2a2a]/95 backdrop-blur-xl border-2 border-gray-700/50 shadow-[0_0_30px_rgba(0,200,255,0.3)]">
+      <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/20 backdrop-blur-xl border-2 border-cyan-400/50 shadow-[0_0_30px_rgba(0,231,255,0.4)]">
         {statItems.map((item, index) => {
           const Icon = item.icon;
           return (
@@ -88,7 +88,7 @@ export const Honobar = () => {
               transition={{ delay: index * 0.03, duration: 0.3 }}
               className="relative group"
             >
-              <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-[#3a3a3a] to-[#2a2a2a] backdrop-blur-sm border border-gray-600/30 px-2.5 py-2 hover:border-gray-500/60 transition-all duration-300 hover:shadow-[0_0_15px_rgba(100,200,255,0.4)]">
+              <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-cyan-400/30 px-2.5 py-2 hover:border-cyan-400/60 transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,231,255,0.5)]">
                 <div className="flex flex-col items-center gap-1">
                   <Icon className={`w-4 h-4 bg-gradient-to-br ${item.color} bg-clip-text text-transparent`} />
                   <div className="text-[9px] text-muted-foreground/80 font-medium whitespace-nowrap leading-tight text-center">
