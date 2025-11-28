@@ -134,7 +134,7 @@ export default function RewardHistory() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gradient-to-br from-[#3a3a3a] to-[#2a2a2a] border-2 border-yellow-500/60 rounded-xl p-6 mb-6 shadow-[0_0_30px_rgba(255,215,0,0.4)]"
+            className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-2 border-yellow-500/60 rounded-xl p-6 mb-6 shadow-[0_0_30px_rgba(0,231,255,0.3)]"
           >
             <div className="text-center">
               <div className="text-sm text-gray-400 mb-2">Tổng CAMLY đã nhận</div>
@@ -150,10 +150,10 @@ export default function RewardHistory() {
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-muted-foreground" />
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-[180px] bg-[#2a2a2a] border-gray-600">
+                <SelectTrigger className="w-[180px] bg-cyan-500/10 border-cyan-400/50">
                   <SelectValue placeholder="Loại hoạt động" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#2a2a2a] border-gray-600">
+                <SelectContent className="bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/20 border-cyan-400/50">
                   <SelectItem value="ALL">Tất cả</SelectItem>
                   <SelectItem value="VIEW">Xem video</SelectItem>
                   <SelectItem value="LIKE">Thích</SelectItem>
@@ -164,10 +164,10 @@ export default function RewardHistory() {
             </div>
 
             <Select value={filterTime} onValueChange={setFilterTime}>
-              <SelectTrigger className="w-[180px] bg-[#2a2a2a] border-gray-600">
+              <SelectTrigger className="w-[180px] bg-cyan-500/10 border-cyan-400/50">
                 <SelectValue placeholder="Thời gian" />
               </SelectTrigger>
-              <SelectContent className="bg-[#2a2a2a] border-gray-600">
+              <SelectContent className="bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/20 border-cyan-400/50">
                 <SelectItem value="ALL">Tất cả</SelectItem>
                 <SelectItem value="TODAY">Hôm nay</SelectItem>
                 <SelectItem value="WEEK">7 ngày qua</SelectItem>
@@ -189,11 +189,11 @@ export default function RewardHistory() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-gradient-to-br from-[#3a3a3a] to-[#2a2a2a] border border-gray-600/40 rounded-lg p-4 hover:border-gray-500/60 transition-all duration-300"
+                  className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-cyan-400/40 rounded-lg p-4 hover:border-cyan-400/60 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-full bg-gray-800/50 ${typeInfo.color}`}>
+                      <div className={`p-2 rounded-full bg-cyan-500/20 ${typeInfo.color}`}>
                         <Icon className="w-5 h-5" />
                       </div>
                       <div>
