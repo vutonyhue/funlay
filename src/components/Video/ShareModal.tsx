@@ -18,12 +18,14 @@ import {
   Twitter,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { awardShareReward } from "@/lib/rewards";
 
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   videoId: string;
   videoTitle: string;
+  userId?: string;
 }
 
 export const ShareModal = ({
@@ -31,20 +33,37 @@ export const ShareModal = ({
   onClose,
   videoId,
   videoTitle,
+  userId,
 }: ShareModalProps) => {
   const [showQR, setShowQR] = useState(false);
+  const [hasShared, setHasShared] = useState(false);
   const { toast } = useToast();
   const shareUrl = `${window.location.origin}/watch/${videoId}`;
 
+  const awardShare = async () => {
+    if (!userId || hasShared) return;
+    setHasShared(true);
+    const result = await awardShareReward(userId, videoId);
+    if (result?.milestone) {
+      toast({
+        title: "🎉 Chúc mừng! Milestone đạt được!",
+        description: `Bạn đã đạt ${result.milestone} CAMLY tổng rewards!`,
+        duration: 5000,
+      });
+    }
+  };
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
+    awardShare();
     toast({
       title: "Đã copy link!",
-      description: "Link video đã được copy vào clipboard",
+      description: "Link video đã được copy vào clipboard (+2 CAMLY)",
     });
   };
 
   const handleShare = (platform: string) => {
+    awardShare();
     const encodedUrl = encodeURIComponent(shareUrl);
     const encodedTitle = encodeURIComponent(videoTitle);
     let shareLink = "";

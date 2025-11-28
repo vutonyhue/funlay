@@ -11,6 +11,7 @@ import { ThumbsUp, ThumbsDown, Share2, MoreHorizontal, Coins } from "lucide-reac
 import { TipModal } from "@/components/Tipping/TipModal";
 import { ShareModal } from "@/components/Video/ShareModal";
 import { MiniProfileCard } from "@/components/Video/MiniProfileCard";
+import { awardViewReward, awardLikeReward, awardCommentReward, awardShareReward } from "@/lib/rewards";
 
 interface Video {
   id: string;
@@ -107,6 +108,18 @@ export default function Watch() {
         .from("videos")
         .update({ view_count: (data.view_count || 0) + 1 })
         .eq("id", id);
+
+      // Award CAMLY for viewing
+      if (user) {
+        const result = await awardViewReward(user.id, id);
+        if (result?.milestone) {
+          toast({
+            title: "🎉 Chúc mừng! Milestone đạt được!",
+            description: `Bạn đã đạt ${result.milestone} CAMLY tổng rewards!`,
+            duration: 5000,
+          });
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error loading video",
@@ -236,10 +249,20 @@ export default function Watch() {
       setNewComment("");
       fetchComments();
 
-      toast({
-        title: "Comment posted",
-        description: "Your comment has been added",
-      });
+      // Award CAMLY for commenting
+      const result = await awardCommentReward(user.id, id!);
+      if (result?.milestone) {
+        toast({
+          title: "🎉 Chúc mừng! Milestone đạt được!",
+          description: `Bạn đã đạt ${result.milestone} CAMLY tổng rewards!`,
+          duration: 5000,
+        });
+      } else {
+        toast({
+          title: "Comment posted",
+          description: "Your comment has been added (+1 CAMLY)",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Error posting comment",
@@ -378,6 +401,16 @@ export default function Watch() {
           .eq("id", id);
 
         setHasLiked(true);
+
+        // Award CAMLY for liking
+        const result = await awardLikeReward(user.id, id!);
+        if (result?.milestone) {
+          toast({
+            title: "🎉 Chúc mừng! Milestone đạt được!",
+            description: `Bạn đã đạt ${result.milestone} CAMLY tổng rewards!`,
+            duration: 5000,
+          });
+        }
       }
 
       fetchVideo();
@@ -697,6 +730,7 @@ export default function Watch() {
         onClose={() => setShareModalOpen(false)}
         videoId={id || ""}
         videoTitle={video?.title || ""}
+        userId={user?.id}
       />
 
       <TipModal
