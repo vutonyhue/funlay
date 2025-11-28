@@ -262,6 +262,7 @@ export type Database = {
           display_name: string | null
           id: string
           music_enabled: boolean | null
+          total_camly_rewards: number
           updated_at: string
           username: string
           wallet_address: string | null
@@ -275,6 +276,7 @@ export type Database = {
           display_name?: string | null
           id: string
           music_enabled?: boolean | null
+          total_camly_rewards?: number
           updated_at?: string
           username: string
           wallet_address?: string | null
@@ -288,6 +290,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           music_enabled?: boolean | null
+          total_camly_rewards?: number
           updated_at?: string
           username?: string
           wallet_address?: string | null

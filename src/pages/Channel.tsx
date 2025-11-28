@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BackgroundMusicPlayer } from "@/components/BackgroundMusicPlayer";
 import { Copy, QrCode, Share2 } from "lucide-react";
 import { Honobar } from "@/components/Layout/Honobar";
+import { RewardStats } from "@/components/Profile/RewardStats";
 import { QRCodeSVG } from "qrcode.react";
 import {
   DropdownMenu,
@@ -304,11 +305,10 @@ export default function Channel() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Honobar />
       <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <main className="pt-28 lg:pl-64">
+      <main className="pt-16 lg:pl-64">
         {profile?.music_enabled && profile.background_music_url && (
           <BackgroundMusicPlayer musicUrl={profile.background_music_url} />
         )}
@@ -322,10 +322,15 @@ export default function Channel() {
               className="w-full h-full object-cover"
             />
           )}
+          {/* Honobar positioned in top-right corner */}
+          <Honobar />
         </div>
 
         {/* Channel Info */}
         <div className="max-w-7xl mx-auto px-6 py-6">
+          {/* Reward Stats */}
+          <RewardStats userId={channel.user_id} walletAddress={profile?.wallet_address} />
+          
           <div className="flex items-start gap-6 mb-6">
             <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-2xl flex-shrink-0">
               {channel.name[0]}

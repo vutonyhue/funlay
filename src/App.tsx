@@ -24,7 +24,6 @@ import InstallPWA from "./pages/InstallPWA";
 import { wagmiConfig } from '@/lib/web3Config';
 import { useCursorBeam } from './hooks/useCursorBeam';
 import { GlobalPaymentNotifications } from './components/Web3/GlobalPaymentNotifications';
-import { Honobar } from './components/Layout/Honobar';
 
 const queryClient = new QueryClient();
 
@@ -33,9 +32,8 @@ function AppContent() {
   
   return (
     <>
-      <Honobar />
       <GlobalPaymentNotifications />
-      <div className="pt-14 md:pt-16">
+      <div>
         <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
