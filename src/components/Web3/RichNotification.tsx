@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RichNotificationProps {
   show: boolean;
@@ -8,11 +9,41 @@ interface RichNotificationProps {
   token: string;
   count: number;
   onClose: () => void;
+  userId?: string;
 }
 
-export const RichNotification = ({ show, amount, token, count, onClose }: RichNotificationProps) => {
+export const RichNotification = ({ show, amount, token, count, onClose, userId }: RichNotificationProps) => {
+  const [musicUrl, setMusicUrl] = useState<string | null>(null);
+
+  // Fetch user's custom music URL
+  useEffect(() => {
+    const fetchMusicUrl = async () => {
+      if (userId) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("music_url")
+          .eq("id", userId)
+          .single();
+        
+        if (data?.music_url) {
+          setMusicUrl(data.music_url);
+        }
+      }
+    };
+    
+    fetchMusicUrl();
+  }, [userId]);
+
   useEffect(() => {
     if (show) {
+      // Play custom Suno music if available
+      let audio: HTMLAudioElement | null = null;
+      if (musicUrl) {
+        audio = new Audio(musicUrl);
+        audio.volume = 0.7;
+        audio.play().catch(err => console.error("Error playing music:", err));
+      }
+
       // Play cute baby Aliens Angel voice saying "RICH RICH RICH"
       const speakNotification = () => {
         // Get voice settings from localStorage
@@ -105,15 +136,23 @@ export const RichNotification = ({ show, amount, token, count, onClose }: RichNo
 
       const timer = setTimeout(() => {
         clearInterval(interval);
+        if (audio) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
         onClose();
       }, 6000);
 
       return () => {
         clearTimeout(timer);
         clearInterval(interval);
+        if (audio) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
       };
     }
-  }, [show, onClose]);
+  }, [show, onClose, musicUrl]);
 
   return (
     <AnimatePresence>

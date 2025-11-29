@@ -558,6 +558,7 @@ const Wallet = () => {
         token={receivedToken}
         count={receivedCount}
         onClose={() => setShowRichNotification(false)}
+        userId={user?.id}
       />
       
       {/* Received History Notification Badge */}

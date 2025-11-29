@@ -85,6 +85,7 @@ export const GlobalPaymentNotifications = () => {
       token={receivedToken}
       count={receivedCount}
       onClose={() => setShowRichNotification(false)}
+      userId={user?.id}
     />
   );
 };
