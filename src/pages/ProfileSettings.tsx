@@ -19,12 +19,14 @@ export default function ProfileSettings() {
   const [displayName, setDisplayName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
   const [bio, setBio] = useState("");
   const [musicUrl, setMusicUrl] = useState("");
   const [voiceGender, setVoiceGender] = useState("female");
   const [voicePitch, setVoicePitch] = useState("high");
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [channelId, setChannelId] = useState<string | null>(null);
 
   useEffect(() => {
     // Load voice settings from localStorage
@@ -62,6 +64,18 @@ export default function ProfileSettings() {
         setBio(data.bio || "");
         setMusicUrl(data.music_url || "");
       }
+
+      // Fetch channel info for banner
+      const { data: channelData } = await supabase
+        .from("channels")
+        .select("id, banner_url")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+
+      if (channelData) {
+        setChannelId(channelData.id);
+        setBannerUrl(channelData.banner_url || "");
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -90,6 +104,16 @@ export default function ProfileSettings() {
         .eq("id", user!.id);
 
       if (error) throw error;
+
+      // Update channel banner if channel exists
+      if (channelId && bannerUrl !== undefined) {
+        const { error: channelError } = await supabase
+          .from("channels")
+          .update({ banner_url: bannerUrl })
+          .eq("id", channelId);
+
+        if (channelError) throw channelError;
+      }
 
       // Save voice settings to localStorage
       localStorage.setItem("voiceGender", voiceGender);
@@ -173,7 +197,7 @@ export default function ProfileSettings() {
               </div>
 
               <div>
-                <Label htmlFor="avatarUrl">Avatar URL</Label>
+                <Label htmlFor="avatarUrl">Ảnh đại diện (Avatar URL)</Label>
                 <Input
                   id="avatarUrl"
                   type="url"
@@ -183,7 +207,22 @@ export default function ProfileSettings() {
                   className="mt-1"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Link to your profile picture
+                  Link đến ảnh đại diện của bạn
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="bannerUrl">Ảnh bìa trang chủ (Banner URL)</Label>
+                <Input
+                  id="bannerUrl"
+                  type="url"
+                  placeholder="https://..."
+                  value={bannerUrl}
+                  onChange={(e) => setBannerUrl(e.target.value)}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Link đến ảnh bìa kênh của bạn (khuyến nghị: 1920x480px)
                 </p>
               </div>
 
