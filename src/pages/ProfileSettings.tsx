@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Play, Pause } from "lucide-react";
 import { Header } from "@/components/Layout/Header";
 import { DragDropImageUpload } from "@/components/Profile/DragDropImageUpload";
 
@@ -28,6 +28,8 @@ export default function ProfileSettings() {
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [channelId, setChannelId] = useState<string | null>(null);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     // Load voice settings from localStorage
@@ -88,9 +90,48 @@ export default function ProfileSettings() {
     }
   };
 
+  const handleAudioPreview = () => {
+    if (!musicUrl) {
+      toast({
+        title: "Chưa có link nhạc",
+        description: "Vui lòng nhập link nhạc Suno trước",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isPlayingPreview && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlayingPreview(false);
+    } else {
+      if (!audioRef.current) {
+        audioRef.current = new Audio(musicUrl);
+        audioRef.current.addEventListener('ended', () => setIsPlayingPreview(false));
+      } else {
+        audioRef.current.src = musicUrl;
+      }
+      
+      audioRef.current.play().catch((error) => {
+        toast({
+          title: "Không thể phát nhạc",
+          description: "Link nhạc không hợp lệ hoặc không thể truy cập",
+          variant: "destructive",
+        });
+        setIsPlayingPreview(false);
+      });
+      setIsPlayingPreview(true);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
+    // Stop preview if playing
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlayingPreview(false);
+    }
 
     try {
       const { error } = await supabase
@@ -237,14 +278,29 @@ export default function ProfileSettings() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="musicUrl">Link nhạc Suno</Label>
-                    <Input
-                      id="musicUrl"
-                      type="url"
-                      placeholder="https://suno.com/..."
-                      value={musicUrl}
-                      onChange={(e) => setMusicUrl(e.target.value)}
-                      className="mt-1"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="musicUrl"
+                        type="url"
+                        placeholder="https://suno.com/..."
+                        value={musicUrl}
+                        onChange={(e) => setMusicUrl(e.target.value)}
+                        className="mt-1 flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={handleAudioPreview}
+                        className="mt-1"
+                      >
+                        {isPlayingPreview ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Link đến nhạc chuông từ Suno để phát khi nhận tiền
                     </p>
