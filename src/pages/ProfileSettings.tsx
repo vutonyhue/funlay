@@ -29,7 +29,9 @@ export default function ProfileSettings() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [channelId, setChannelId] = useState<string | null>(null);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const [isUploadingMusic, setIsUploadingMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const musicFileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     // Load voice settings from localStorage
@@ -90,7 +92,21 @@ export default function ProfileSettings() {
     }
   };
 
-  const handleAudioPreview = () => {
+  const extractSunoAudioUrl = async (sunoPageUrl: string): Promise<string | null> => {
+    // Extract song ID from Suno page URL
+    const songIdMatch = sunoPageUrl.match(/suno\.com\/song\/([a-zA-Z0-9-]+)/);
+    const shortLinkMatch = sunoPageUrl.match(/suno\.com\/s\/([a-zA-Z0-9-]+)/);
+    
+    if (songIdMatch || shortLinkMatch) {
+      const songId = songIdMatch ? songIdMatch[1] : shortLinkMatch[1];
+      // Construct direct audio URL
+      return `https://cdn1.suno.ai/${songId}.mp3`;
+    }
+    
+    return null;
+  };
+
+  const handleAudioPreview = async () => {
     if (!musicUrl) {
       toast({
         title: "Chưa có link nhạc",
@@ -100,10 +116,24 @@ export default function ProfileSettings() {
       return;
     }
 
+    let audioUrlToPlay = musicUrl;
+
+    // Check if it's a Suno song page URL and extract audio URL
+    const isSunoPageUrl = /suno\.com\/(song|s)\//i.test(musicUrl);
+    if (isSunoPageUrl) {
+      const extractedUrl = await extractSunoAudioUrl(musicUrl);
+      if (extractedUrl) {
+        audioUrlToPlay = extractedUrl;
+        toast({
+          title: "Đã chuyển đổi link Suno",
+          description: "Tự động trích xuất link nhạc từ trang Suno",
+        });
+      }
+    }
+
     // Check if it's a valid audio URL format
-    const isDirectAudioUrl = /\.(mp3|wav|ogg|m4a|aac|flac)(\?.*)?$/i.test(musicUrl);
+    const isDirectAudioUrl = /\.(mp3|wav|ogg|m4a|aac|flac)(\?.*)?$/i.test(audioUrlToPlay);
     const isYouTubeUrl = /youtube\.com|youtu\.be/i.test(musicUrl);
-    const isSunoUrl = /suno\.com/i.test(musicUrl);
 
     if (isYouTubeUrl) {
       toast({
@@ -114,21 +144,12 @@ export default function ProfileSettings() {
       return;
     }
 
-    if (isSunoUrl && !isDirectAudioUrl) {
-      toast({
-        title: "Link Suno không hợp lệ",
-        description: "Cần link nhạc trực tiếp từ Suno (kết thúc bằng .mp3). Nhấn chuột phải vào nút play > Copy audio address",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (isPlayingPreview && audioRef.current) {
       audioRef.current.pause();
       setIsPlayingPreview(false);
     } else {
       if (!audioRef.current) {
-        audioRef.current = new Audio(musicUrl);
+        audioRef.current = new Audio(audioUrlToPlay);
         audioRef.current.addEventListener('ended', () => setIsPlayingPreview(false));
         audioRef.current.addEventListener('error', () => {
           toast({
@@ -139,7 +160,7 @@ export default function ProfileSettings() {
           setIsPlayingPreview(false);
         });
       } else {
-        audioRef.current.src = musicUrl;
+        audioRef.current.src = audioUrlToPlay;
       }
       
       audioRef.current.play().catch((error) => {
@@ -155,17 +176,91 @@ export default function ProfileSettings() {
     }
   };
 
+  const handleMusicFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|m4a)$/i)) {
+      toast({
+        title: "File không hợp lệ",
+        description: "Vui lòng chọn file nhạc định dạng .mp3, .wav, .ogg hoặc .m4a",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File quá lớn",
+        description: "Kích thước file không được vượt quá 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingMusic(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user!.id}/music_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('uploads')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(fileName);
+
+      setMusicUrl(publicUrl);
+      
+      toast({
+        title: "Tải lên thành công",
+        description: "File nhạc đã được tải lên và sẵn sàng sử dụng",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Lỗi tải lên",
+        description: error.message || "Không thể tải file nhạc lên",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingMusic(false);
+      if (musicFileInputRef.current) {
+        musicFileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
-    // Stop preview if playing
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsPlayingPreview(false);
-    }
+      // Stop preview if playing
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlayingPreview(false);
+      }
 
-    try {
+      // Convert Suno page URL to direct audio URL before saving
+      let finalMusicUrl = musicUrl;
+      const isSunoPageUrl = /suno\.com\/(song|s)\//i.test(musicUrl);
+      if (isSunoPageUrl) {
+        const extractedUrl = await extractSunoAudioUrl(musicUrl);
+        if (extractedUrl) {
+          finalMusicUrl = extractedUrl;
+        }
+      }
+
+      try {
       // First check if profile exists, if not create it
       const { data: existingProfile } = await supabase
         .from("profiles")
@@ -194,7 +289,7 @@ export default function ProfileSettings() {
           wallet_address: walletAddress,
           avatar_url: avatarUrl,
           bio: bio,
-          music_url: musicUrl,
+          music_url: finalMusicUrl,
         })
         .eq("id", user!.id);
 
@@ -335,7 +430,7 @@ export default function ProfileSettings() {
                       <Input
                         id="musicUrl"
                         type="url"
-                        placeholder="https://example.com/music.mp3"
+                        placeholder="https://suno.com/s/... hoặc https://example.com/music.mp3"
                         value={musicUrl}
                         onChange={(e) => setMusicUrl(e.target.value)}
                         className="mt-1 flex-1"
@@ -355,8 +450,43 @@ export default function ProfileSettings() {
                         )}
                       </Button>
                     </div>
+                    
+                    {/* File upload button */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={musicFileInputRef}
+                        type="file"
+                        accept=".mp3,.wav,.ogg,.m4a,audio/mpeg,audio/wav,audio/ogg,audio/m4a"
+                        onChange={handleMusicFileUpload}
+                        className="hidden"
+                        id="music-file-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => musicFileInputRef.current?.click()}
+                        disabled={isUploadingMusic}
+                        className="gap-2"
+                      >
+                        {isUploadingMusic ? (
+                          <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            Đang tải lên...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            Hoặc tải file lên
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
                     <p className="text-xs text-muted-foreground">
-                      Nhập link file nhạc trực tiếp (.mp3, .wav, .ogg) để phát khi nhận CAMLY. 
+                      Hỗ trợ: Link Suno trực tiếp (suno.com/s/...), file nhạc trực tiếp (.mp3, .wav, .ogg), hoặc tải file lên (tối đa 10MB).
                       <strong className="text-foreground"> KHÔNG</strong> hỗ trợ YouTube/Spotify.
                     </p>
                   </div>
