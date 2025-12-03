@@ -36,23 +36,83 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
 
   useEffect(() => {
     if (show) {
-      // Play custom Suno music if available
-      let audio: HTMLAudioElement | null = null;
+      // Create continuous looping ringtone using Web Audio API
+      let audioContext: AudioContext | null = null;
+      let oscillator: OscillatorNode | null = null;
+      let gainNode: GainNode | null = null;
+      let ringtoneInterval: NodeJS.Timeout | null = null;
+      
+      // Play continuous ringtone pattern
+      const playRingtone = () => {
+        try {
+          audioContext = new AudioContext();
+          gainNode = audioContext.createGain();
+          gainNode.connect(audioContext.destination);
+          gainNode.gain.value = 0.3;
+          
+          // Create a pleasant notification sound pattern
+          const playTone = (freq: number, duration: number, delay: number) => {
+            if (!audioContext || !gainNode) return;
+            
+            const osc = audioContext.createOscillator();
+            const oscGain = audioContext.createGain();
+            
+            osc.connect(oscGain);
+            oscGain.connect(gainNode);
+            
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            
+            const startTime = audioContext.currentTime + delay;
+            oscGain.gain.setValueAtTime(0, startTime);
+            oscGain.gain.linearRampToValueAtTime(0.5, startTime + 0.05);
+            oscGain.gain.linearRampToValueAtTime(0, startTime + duration);
+            
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+          };
+          
+          // Play a cheerful money received melody pattern
+          const playMelody = () => {
+            playTone(880, 0.15, 0);    // A5
+            playTone(1109, 0.15, 0.15); // C#6
+            playTone(1319, 0.15, 0.3);  // E6
+            playTone(1760, 0.3, 0.45);  // A6
+            playTone(1319, 0.15, 0.8);  // E6
+            playTone(1760, 0.4, 0.95);  // A6
+          };
+          
+          // Play immediately
+          playMelody();
+          
+          // Loop the ringtone continuously
+          ringtoneInterval = setInterval(() => {
+            playMelody();
+          }, 1500);
+          
+        } catch (err) {
+          console.error("Error playing ringtone:", err);
+        }
+      };
+      
+      playRingtone();
+      
+      // Play custom Suno music if available (on top of ringtone)
+      let customAudio: HTMLAudioElement | null = null;
       if (musicUrl) {
-        audio = new Audio(musicUrl);
-        audio.volume = 0.7;
-        audio.play().catch(err => console.error("Error playing music:", err));
+        customAudio = new Audio(musicUrl);
+        customAudio.volume = 0.5;
+        customAudio.loop = true; // Loop the custom music
+        customAudio.play().catch(err => console.error("Error playing music:", err));
       }
 
       // Play cute baby Aliens Angel voice saying "RICH RICH RICH"
       const speakNotification = () => {
-        // Get voice settings from localStorage
         const voiceGender = localStorage.getItem("voiceGender") || "female";
         const voicePitch = localStorage.getItem("voicePitch") || "high";
         
         const utterance = new SpeechSynthesisUtterance("RICH RICH RICH");
         
-        // Set pitch based on user preference
         if (voicePitch === "high") {
           utterance.pitch = 2.0;
         } else if (voicePitch === "medium") {
@@ -61,11 +121,10 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
           utterance.pitch = 1.0;
         }
         
-        utterance.rate = 0.9; // Slightly slower for cuteness
+        utterance.rate = 0.9;
         utterance.volume = 1;
-        utterance.lang = 'en-US'; // English for "RICH"
+        utterance.lang = 'en-US';
         
-        // Try to select voice based on gender preference
         const voices = window.speechSynthesis.getVoices();
         if (voices.length > 0) {
           const preferredVoice = voices.find(voice => 
@@ -81,7 +140,9 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
         window.speechSynthesis.speak(utterance);
       };
       
-      // Wait for voices to load if not already loaded
+      // Speak voice notification repeatedly
+      let voiceInterval: NodeJS.Timeout | null = null;
+      
       if (window.speechSynthesis.getVoices().length === 0) {
         window.speechSynthesis.onvoiceschanged = () => {
           speakNotification();
@@ -89,9 +150,14 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
       } else {
         speakNotification();
       }
+      
+      // Repeat voice every 3 seconds
+      voiceInterval = setInterval(() => {
+        speakNotification();
+      }, 3000);
 
       // Trigger massive confetti celebration
-      const duration = 5000;
+      const duration = 10000; // Extended duration
       const animationEnd = Date.now() + duration;
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
 
@@ -99,16 +165,15 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
         return Math.random() * (max - min) + min;
       };
 
-      const interval = setInterval(() => {
+      const confettiInterval = setInterval(() => {
         const timeLeft = animationEnd - Date.now();
 
         if (timeLeft <= 0) {
-          return clearInterval(interval);
+          return clearInterval(confettiInterval);
         }
 
         const particleCount = 50 * (timeLeft / duration);
 
-        // Golden confetti from left
         confetti({
           ...defaults,
           particleCount,
@@ -116,7 +181,6 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
           colors: ['#FFD700', '#FFA500', '#FFFF00', '#FF6347'],
         });
 
-        // Golden confetti from right
         confetti({
           ...defaults,
           particleCount,
@@ -124,7 +188,6 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
           colors: ['#FFD700', '#FFA500', '#FFFF00', '#FF6347'],
         });
 
-        // Sparkles from center
         confetti({
           ...defaults,
           particleCount: particleCount / 2,
@@ -134,22 +197,35 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
         });
       }, 250);
 
+      // Auto close after extended duration
       const timer = setTimeout(() => {
-        clearInterval(interval);
-        if (audio) {
-          audio.pause();
-          audio.currentTime = 0;
+        clearInterval(confettiInterval);
+        if (ringtoneInterval) clearInterval(ringtoneInterval);
+        if (voiceInterval) clearInterval(voiceInterval);
+        if (audioContext) {
+          audioContext.close();
         }
+        if (customAudio) {
+          customAudio.pause();
+          customAudio.currentTime = 0;
+        }
+        window.speechSynthesis.cancel();
         onClose();
-      }, 6000);
+      }, 10000);
 
       return () => {
         clearTimeout(timer);
-        clearInterval(interval);
-        if (audio) {
-          audio.pause();
-          audio.currentTime = 0;
+        clearInterval(confettiInterval);
+        if (ringtoneInterval) clearInterval(ringtoneInterval);
+        if (voiceInterval) clearInterval(voiceInterval);
+        if (audioContext) {
+          audioContext.close();
         }
+        if (customAudio) {
+          customAudio.pause();
+          customAudio.currentTime = 0;
+        }
+        window.speechSynthesis.cancel();
       };
     }
   }, [show, onClose, musicUrl]);
