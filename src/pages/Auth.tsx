@@ -7,8 +7,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Play, ArrowLeft, Eye, EyeOff, Wallet, Mail } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
-import { getWeb3Modal, wagmiConfig } from "@/lib/web3Config";
-import { getAccount, disconnect } from "@wagmi/core";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,9 +22,6 @@ export default function Auth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Initialize Web3Modal
-    getWeb3Modal();
-    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -140,102 +135,140 @@ export default function Auth() {
     setWalletLoading(true);
     
     try {
-      const modal = getWeb3Modal();
-      if (!modal) {
-        throw new Error("Web3Modal not initialized");
+      // Direct wallet connection without WalletConnect modal
+      const ethereum = (window as any).ethereum;
+      
+      if (!ethereum) {
+        toast({
+          title: "Wallet Not Found",
+          description: `Please install ${walletType} browser extension first.`,
+          variant: "destructive",
+        });
+        setWalletLoading(false);
+        return;
       }
 
-      await modal.open();
+      // Check if the user has the correct wallet
+      const isBitget = ethereum.isBitKeep || ethereum.isBitget;
+      const isMetaMask = ethereum.isMetaMask && !isBitget;
       
-      // Wait for connection
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (walletType === 'Bitget' && !isBitget) {
+        toast({
+          title: "Bitget Wallet Required",
+          description: "Please install Bitget Wallet extension or use MetaMask instead.",
+          variant: "destructive",
+        });
+        setWalletLoading(false);
+        return;
+      }
+
+      // Request account access
+      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
       
-      const account = getAccount(wagmiConfig);
-      
-      if (account.isConnected && account.address) {
-        const walletAddress = account.address;
+      if (!accounts || accounts.length === 0) {
+        throw new Error("No accounts found");
+      }
+
+      const walletAddress = accounts[0];
+
+      // Switch to BSC if not already on it
+      try {
+        await ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x38' }], // BSC Mainnet
+        });
+      } catch (switchError: any) {
+        // If BSC is not added, add it
+        if (switchError.code === 4902) {
+          await ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x38',
+              chainName: 'BNB Smart Chain',
+              nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+              rpcUrls: ['https://bsc-dataseed.binance.org/'],
+              blockExplorerUrls: ['https://bscscan.com/'],
+            }],
+          });
+        }
+      }
+
+      // Detect actual wallet type
+      const detectedWalletType = isBitget ? 'Bitget' : 'MetaMask';
         
-        // Check if user exists with this wallet address
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id, username')
-          .eq('wallet_address', walletAddress)
-          .single();
+      // Check if user exists with this wallet address
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .eq('wallet_address', walletAddress)
+        .single();
 
-        if (existingProfile) {
-          // User exists - sign in with a special wallet-based email
-          const walletEmail = `${walletAddress.toLowerCase()}@wallet.funplay.local`;
-          
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: walletEmail,
-            password: walletAddress, // Use wallet address as password
-          });
+      if (existingProfile) {
+        // User exists - sign in with a special wallet-based email
+        const walletEmail = `${walletAddress.toLowerCase()}@wallet.funplay.local`;
+        
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: walletEmail,
+          password: walletAddress, // Use wallet address as password
+        });
 
-          if (signInError) {
-            // If sign in fails, the user might have registered differently
-            toast({
-              title: "Wallet Connected",
-              description: "Please link this wallet to your existing account in Profile Settings.",
-            });
-            
-            // Store wallet address temporarily
-            localStorage.setItem('pendingWalletAddress', walletAddress);
-            navigate("/");
-          } else {
-            toast({
-              title: "Welcome Back",
-              description: `Logged in with wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
-            });
-          }
-        } else {
-          // New user - create account with wallet
-          const walletEmail = `${walletAddress.toLowerCase()}@wallet.funplay.local`;
-          const username = `user_${walletAddress.slice(2, 10).toLowerCase()}`;
-          
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: walletEmail,
-            password: walletAddress,
-            options: {
-              data: {
-                display_name: `Wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
-                wallet_address: walletAddress,
-              },
-            },
-          });
-
-          if (signUpError) {
-            // Try to sign in if already exists
-            const { error: retrySignIn } = await supabase.auth.signInWithPassword({
-              email: walletEmail,
-              password: walletAddress,
-            });
-            
-            if (retrySignIn) {
-              throw retrySignIn;
-            }
-          }
-
-          // Update profile with wallet address
-          if (signUpData?.user) {
-            await supabase
-              .from('profiles')
-              .update({ 
-                wallet_address: walletAddress,
-                wallet_type: walletType
-              })
-              .eq('id', signUpData.user.id);
-          }
-
+        if (signInError) {
+          // If sign in fails, the user might have registered differently
           toast({
-            title: "Account Created",
-            description: `Welcome! Your wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)} is now connected.`,
+            title: "Wallet Connected",
+            description: "Please link this wallet to your existing account in Profile Settings.",
+          });
+          
+          // Store wallet address temporarily
+          localStorage.setItem('pendingWalletAddress', walletAddress);
+          navigate("/");
+        } else {
+          toast({
+            title: "Welcome Back",
+            description: `Logged in with wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
           });
         }
       } else {
+        // New user - create account with wallet
+        const walletEmail = `${walletAddress.toLowerCase()}@wallet.funplay.local`;
+        
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: walletEmail,
+          password: walletAddress,
+          options: {
+            data: {
+              display_name: `Wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+              wallet_address: walletAddress,
+            },
+          },
+        });
+
+        if (signUpError) {
+          // Try to sign in if already exists
+          const { error: retrySignIn } = await supabase.auth.signInWithPassword({
+            email: walletEmail,
+            password: walletAddress,
+          });
+          
+          if (retrySignIn) {
+            throw retrySignIn;
+          }
+        }
+
+        // Update profile with wallet address
+        if (signUpData?.user) {
+          await supabase
+            .from('profiles')
+            .update({ 
+              wallet_address: walletAddress,
+              wallet_type: detectedWalletType
+            })
+            .eq('id', signUpData.user.id);
+        }
+
         toast({
-          title: "Connection Cancelled",
-          description: "Wallet connection was cancelled.",
-          variant: "destructive",
+          title: "Account Created",
+          description: `Welcome! Your wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)} is now connected.`,
         });
       }
     } catch (error: any) {
