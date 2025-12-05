@@ -180,13 +180,10 @@ export default function UserProfile() {
             animate={{ opacity: 1, y: 0 }}
             className="relative pt-8"
           >
-            {/* Header row with Avatar and KYC button */}
-            <div className="flex items-start justify-between">
-              {/* Left spacer for centering avatar */}
-              <div className="w-24 hidden sm:block" />
-              
-              {/* Center: Avatar with rainbow border */}
-              <div className="flex flex-col items-center text-center flex-1">
+            {/* Center: Avatar with KYC badge next to it */}
+            <div className="flex flex-col items-center text-center">
+              {/* Avatar + KYC Badge Row */}
+              <div className="flex items-center gap-4">
                 <LuxuryAvatar
                   avatarUrl={profile.avatar_url}
                   displayName={profile.display_name}
@@ -195,51 +192,50 @@ export default function UserProfile() {
                   isOwnProfile={isOwnProfile}
                   onUpdate={fetchProfileData}
                 />
-
-                {/* Name & Username */}
-                <motion.h1
-                  className="mt-6 text-3xl font-black bg-gradient-to-r from-[hsl(var(--cosmic-cyan))] via-[hsl(var(--cosmic-magenta))] to-[hsl(var(--cosmic-gold))] bg-clip-text text-transparent drop-shadow-lg"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  {profile.display_name || profile.username}
-                </motion.h1>
-                <motion.p
-                  className="text-muted-foreground font-medium"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  @{profile.username}
-                </motion.p>
-
-                {/* Bio */}
-                {profile.bio && (
-                  <motion.p
-                    className="mt-3 max-w-md text-sm text-foreground/80 leading-relaxed"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
+                
+                {/* KYC Badge next to avatar */}
+                {isOwnProfile && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
                   >
-                    {profile.bio}
-                  </motion.p>
+                    <KYCButton
+                      isVerified={isKYCVerified}
+                      onClick={() => setShowKYCModal(true)}
+                    />
+                  </motion.div>
                 )}
               </div>
 
-              {/* Right: KYC Button */}
-              {isOwnProfile && (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="absolute right-0 top-8 sm:relative sm:right-auto sm:top-auto"
+              {/* Name & Username */}
+              <motion.h1
+                className="mt-6 text-3xl font-black bg-gradient-to-r from-[hsl(var(--cosmic-cyan))] via-[hsl(var(--cosmic-magenta))] to-[hsl(var(--cosmic-gold))] bg-clip-text text-transparent drop-shadow-lg"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                {profile.display_name || profile.username}
+              </motion.h1>
+              <motion.p
+                className="text-muted-foreground font-medium"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                @{profile.username}
+              </motion.p>
+
+              {/* Bio */}
+              {profile.bio && (
+                <motion.p
+                  className="mt-3 max-w-md text-sm text-foreground/80 leading-relaxed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
                 >
-                  <KYCButton
-                    isVerified={isKYCVerified}
-                    onClick={() => setShowKYCModal(true)}
-                  />
-                </motion.div>
+                  {profile.bio}
+                </motion.p>
               )}
             </div>
           </motion.div>
