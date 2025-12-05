@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 
 export default function Auth() {
@@ -120,18 +120,21 @@ export default function Auth() {
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-[rgba(138,43,226,0.3)] to-[rgba(255,0,150,0.15)] z-10" />
       <div className="w-full max-w-md space-y-6 relative z-20">
-        {/* Logo */}
+        {/* Logo Video */}
         <div className="flex justify-center">
-          <div className="flex items-center gap-3 bg-gradient-to-r from-[#00E7FF] via-[#7A2BFF] via-[#FF00E5] to-[#FFD700] px-6 py-3 rounded-2xl shadow-lg">
-            <Play className="h-8 w-8 text-white fill-white" />
-            <div className="text-2xl font-bold text-white tracking-wider">
-              FUN PLAY
-            </div>
-          </div>
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="h-24 w-auto rounded-2xl"
+          >
+            <source src="/videos/logo-animation.mp4" type="video/mp4" />
+          </video>
         </div>
 
-        {/* Auth Card - Frosted Glass */}
-        <div className="bg-white/80 backdrop-blur-xl border-2 border-purple-500/50 rounded-2xl p-8 shadow-lg">
+        {/* Auth Card - Transparent Frosted Glass */}
+        <div className="bg-white/50 backdrop-blur-xl border border-white/30 rounded-2xl p-8 shadow-lg">
           <h2 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-[#00E7FF] via-[#7A2BFF] to-[#FF00E5] bg-clip-text text-transparent">
             {isLogin ? "Sign In" : "Sign Up"}
           </h2>
