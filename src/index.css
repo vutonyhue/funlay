@@ -225,18 +225,81 @@ All colors MUST be HSL.
   100% { border-color: hsl(216 100% 50%); box-shadow: 0 0 40px hsl(216 100% 50% / 1); }
 }
 
-/* Glass card - Clean white style */
+/* Glass card with rainbow breathing glow */
 .glass-card {
-  background: hsl(0 0% 100%);
-  border: 1px solid hsl(270 30% 92%);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px hsl(0 0% 0% / 0.06);
-  transition: all 0.2s ease;
+  background: hsl(0 0% 100% / 0.9);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px hsl(270 80% 70% / 0.15);
+  transition: all 0.3s ease;
+  animation: rainbow-breathing 4s ease-in-out infinite;
 }
 
 .glass-card:hover {
-  box-shadow: 0 4px 16px hsl(0 0% 0% / 0.1);
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 
+    0 8px 32px hsl(187 100% 50% / 0.3),
+    0 0 20px hsl(312 100% 50% / 0.2);
+}
+
+@keyframes rainbow-breathing {
+  0%, 100% { 
+    box-shadow: 0 4px 20px hsl(187 100% 50% / 0.3), 0 0 30px hsl(187 100% 50% / 0.1);
+    border-color: hsl(187 100% 50% / 0.3);
+  }
+  25% { 
+    box-shadow: 0 4px 20px hsl(263 100% 58% / 0.3), 0 0 30px hsl(263 100% 58% / 0.1);
+    border-color: hsl(263 100% 58% / 0.3);
+  }
+  50% { 
+    box-shadow: 0 4px 20px hsl(312 100% 50% / 0.3), 0 0 30px hsl(312 100% 50% / 0.1);
+    border-color: hsl(312 100% 50% / 0.3);
+  }
+  75% { 
+    box-shadow: 0 4px 20px hsl(45 100% 50% / 0.3), 0 0 30px hsl(45 100% 50% / 0.1);
+    border-color: hsl(45 100% 50% / 0.3);
+  }
+}
+
+/* Rainbow glow button */
+.rainbow-glow-btn {
+  position: relative;
+  background: linear-gradient(135deg, #00E7FF 0%, #7A2BFF 50%, #FF00E5 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  overflow: hidden;
+  animation: btn-glow 3s ease-in-out infinite;
+}
+
+.rainbow-glow-btn::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, #00E7FF, #7A2BFF, #FF00E5, #FFD700, #00E7FF);
+  background-size: 300% 300%;
+  border-radius: inherit;
+  z-index: -1;
+  animation: gradient-rotate 3s linear infinite;
+}
+
+@keyframes btn-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px hsl(187 100% 50% / 0.5), 0 0 40px hsl(187 100% 50% / 0.3);
+  }
+  33% { 
+    box-shadow: 0 0 20px hsl(263 100% 58% / 0.5), 0 0 40px hsl(263 100% 58% / 0.3);
+  }
+  66% { 
+    box-shadow: 0 0 20px hsl(312 100% 50% / 0.5), 0 0 40px hsl(312 100% 50% / 0.3);
+  }
+}
+
+@keyframes gradient-rotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Holographic foil texture */
