@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BackgroundMusicPlayer } from "@/components/BackgroundMusicPlayer";
 import { Copy, QrCode, Share2 } from "lucide-react";
 import { Honobar } from "@/components/Layout/Honobar";
-import { RewardStats } from "@/components/Profile/RewardStats";
+import { GlassmorphismStats } from "@/components/Profile/GlassmorphismStats";
 import { QRCodeSVG } from "qrcode.react";
 import {
   DropdownMenu,
@@ -397,8 +397,8 @@ export default function Channel() {
 
         {/* Channel Info */}
         <div className="max-w-7xl mx-auto px-6 py-6">
-          {/* Reward Stats */}
-          <RewardStats userId={channel.user_id} walletAddress={profile?.wallet_address} />
+          {/* Glassmorphism Stats */}
+          <GlassmorphismStats userId={channel.user_id} channelId={channel.id} />
           
           <div className="flex items-start gap-6 mb-6">
             {profile?.avatar_url ? (
