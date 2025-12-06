@@ -14,6 +14,7 @@ interface RichNotificationProps {
 
 export const RichNotification = ({ show, amount, token, count, onClose, userId }: RichNotificationProps) => {
   const [musicUrl, setMusicUrl] = useState<string | null>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
 
   // Fetch user's custom music URL
   useEffect(() => {
@@ -34,68 +35,26 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
     fetchMusicUrl();
   }, [userId]);
 
+  // Happy jumping effect - move notification around the screen
+  useEffect(() => {
+    if (!show) return;
+
+    const jumpInterval = setInterval(() => {
+      const maxX = window.innerWidth - 400; // notification width approx
+      const maxY = window.innerHeight - 150; // notification height approx
+      
+      const newX = Math.random() * Math.max(0, maxX);
+      const newY = Math.random() * Math.max(0, maxY);
+      
+      setPosition({ x: newX, y: newY });
+    }, 1500); // Jump every 1.5 seconds
+
+    return () => clearInterval(jumpInterval);
+  }, [show]);
+
   useEffect(() => {
     if (show) {
-      // Create continuous looping ringtone using Web Audio API
-      let audioContext: AudioContext | null = null;
-      let ringtoneInterval: NodeJS.Timeout | null = null;
-      
-      // Play continuous ringtone pattern (NEW ringtone only)
-      const playRingtone = () => {
-        try {
-          audioContext = new AudioContext();
-          const gainNode = audioContext.createGain();
-          gainNode.connect(audioContext.destination);
-          gainNode.gain.value = 0.4;
-          
-          // Create a pleasant notification sound pattern
-          const playTone = (freq: number, duration: number, delay: number) => {
-            if (!audioContext || !gainNode) return;
-            
-            const osc = audioContext.createOscillator();
-            const oscGain = audioContext.createGain();
-            
-            osc.connect(oscGain);
-            oscGain.connect(gainNode);
-            
-            osc.frequency.value = freq;
-            osc.type = 'sine';
-            
-            const startTime = audioContext.currentTime + delay;
-            oscGain.gain.setValueAtTime(0, startTime);
-            oscGain.gain.linearRampToValueAtTime(0.6, startTime + 0.05);
-            oscGain.gain.linearRampToValueAtTime(0, startTime + duration);
-            
-            osc.start(startTime);
-            osc.stop(startTime + duration);
-          };
-          
-          // Play a cheerful money received melody pattern
-          const playMelody = () => {
-            playTone(880, 0.15, 0);    // A5
-            playTone(1109, 0.15, 0.15); // C#6
-            playTone(1319, 0.15, 0.3);  // E6
-            playTone(1760, 0.3, 0.45);  // A6
-            playTone(1319, 0.15, 0.8);  // E6
-            playTone(1760, 0.4, 0.95);  // A6
-          };
-          
-          // Play immediately
-          playMelody();
-          
-          // Loop the ringtone continuously without interruption
-          ringtoneInterval = setInterval(() => {
-            playMelody();
-          }, 1500);
-          
-        } catch (err) {
-          console.error("Error playing ringtone:", err);
-        }
-      };
-      
-      playRingtone();
-      
-      // Play custom Suno music if available (on top of ringtone)
+      // Only play custom music if user has linked one - NO default ringtone
       let customAudio: HTMLAudioElement | null = null;
       if (musicUrl) {
         customAudio = new Audio(musicUrl);
@@ -185,11 +144,7 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
       // Auto close after 10 seconds
       const timer = setTimeout(() => {
         clearInterval(confettiInterval);
-        if (ringtoneInterval) clearInterval(ringtoneInterval);
         if (voiceInterval) clearInterval(voiceInterval);
-        if (audioContext) {
-          audioContext.close();
-        }
         if (customAudio) {
           customAudio.pause();
           customAudio.currentTime = 0;
@@ -201,11 +156,7 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
       return () => {
         clearTimeout(timer);
         clearInterval(confettiInterval);
-        if (ringtoneInterval) clearInterval(ringtoneInterval);
         if (voiceInterval) clearInterval(voiceInterval);
-        if (audioContext) {
-          audioContext.close();
-        }
         if (customAudio) {
           customAudio.pause();
           customAudio.currentTime = 0;
@@ -219,14 +170,21 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, y: -50, scale: 0.5 }}
+          initial={{ opacity: 0, scale: 0.5 }}
           animate={{ 
             opacity: 1, 
-            y: 0, 
             scale: 1,
+            x: position.x,
+            y: position.y,
           }}
-          exit={{ opacity: 0, y: -50, scale: 0.5 }}
-          className="fixed top-24 right-4 z-50 p-4 rounded-2xl shadow-2xl overflow-hidden flex items-center gap-3"
+          exit={{ opacity: 0, scale: 0.5 }}
+          transition={{
+            type: "spring",
+            stiffness: 300,
+            damping: 20,
+            mass: 1,
+          }}
+          className="fixed top-4 left-4 z-50 p-4 rounded-2xl shadow-2xl overflow-hidden flex items-center gap-3"
           style={{
             background: "white",
             border: "4px solid transparent",
@@ -236,91 +194,106 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
             boxShadow: "0 0 60px rgba(255, 0, 0, 0.7), 0 0 80px rgba(255, 127, 0, 0.6), 0 0 100px rgba(255, 255, 0, 0.5), 0 0 120px rgba(0, 255, 0, 0.4), 0 0 140px rgba(0, 0, 255, 0.3)",
           }}
         >
-          {/* Pulsing Rainbow CAMLY Coin Icon */}
-          <motion.img
-            src="/images/camly-coin.png"
-            alt="CAMLY COIN"
-            className="w-12 h-12 rounded-full relative z-10"
+          {/* Bouncing animation wrapper */}
+          <motion.div
             animate={{
-              scale: [1, 1.2, 1],
-              rotate: [0, 360],
-              filter: [
-                "drop-shadow(0 0 20px rgba(255, 0, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 127, 0, 0.6))",
-                "drop-shadow(0 0 20px rgba(255, 255, 0, 0.8)) drop-shadow(0 0 40px rgba(0, 255, 0, 0.6))",
-                "drop-shadow(0 0 20px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 40px rgba(0, 0, 255, 0.6))",
-                "drop-shadow(0 0 20px rgba(255, 0, 255, 0.8)) drop-shadow(0 0 40px rgba(255, 0, 0, 0.6))",
-              ],
+              y: [0, -10, 0, -5, 0],
+              rotate: [-2, 2, -2, 2, 0],
             }}
             transition={{
-              duration: 2,
+              duration: 0.5,
               repeat: Infinity,
+              repeatDelay: 0.2,
               ease: "easeInOut",
             }}
-            style={{
-              boxShadow: "0 0 40px rgba(255, 215, 0, 1), 0 0 80px rgba(255, 165, 0, 0.8), 0 0 120px rgba(255, 255, 0, 0.6)",
-            }}
-          />
-          
-          <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 relative z-10">
-            <motion.span
+            className="flex items-center gap-3"
+          >
+            {/* Pulsing Rainbow CAMLY Coin Icon */}
+            <motion.img
+              src="/images/camly-coin.png"
+              alt="CAMLY COIN"
+              className="w-12 h-12 rounded-full relative z-10"
               animate={{
                 scale: [1, 1.2, 1],
+                rotate: [0, 360],
+                filter: [
+                  "drop-shadow(0 0 20px rgba(255, 0, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 127, 0, 0.6))",
+                  "drop-shadow(0 0 20px rgba(255, 255, 0, 0.8)) drop-shadow(0 0 40px rgba(0, 255, 0, 0.6))",
+                  "drop-shadow(0 0 20px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 40px rgba(0, 0, 255, 0.6))",
+                  "drop-shadow(0 0 20px rgba(255, 0, 255, 0.8)) drop-shadow(0 0 40px rgba(255, 0, 0, 0.6))",
+                ],
               }}
               transition={{
-                duration: 0.8,
+                duration: 2,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="font-black text-3xl"
               style={{
-                background: "linear-gradient(90deg, #FFD700 0%, #FFC300 30%, #FFB000 60%, #FF9500 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                fontWeight: 900,
+                boxShadow: "0 0 40px rgba(255, 215, 0, 1), 0 0 80px rgba(255, 165, 0, 0.8), 0 0 120px rgba(255, 255, 0, 0.6)",
               }}
-            >
-              RICH
-            </motion.span>
-            <motion.span
-              animate={{
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 0.6,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="font-black text-xl"
-              style={{
-                background: "linear-gradient(90deg, #FFD700 0%, #FFC300 30%, #FFB000 60%, #FF9500 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                fontWeight: 900,
-              }}
-            >
-              +{parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {token}
-            </motion.span>
-          </div>
-          
-          <motion.p
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-xs font-bold mt-1 relative z-10"
-            style={{
-              background: "linear-gradient(90deg, #FFD700 0%, #FFC300 30%, #FFB000 60%, #FF9500 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              fontWeight: 900,
-            }}
-          >
-            💰 Chúc mừng! Bạn vừa nhận được tiền! 💎
-          </motion.p>
-          </div>
+            />
+            
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 relative z-10">
+                <motion.span
+                  animate={{
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="font-black text-3xl"
+                  style={{
+                    background: "linear-gradient(90deg, #FFD700 0%, #FFC300 30%, #FFB000 60%, #FF9500 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                    fontWeight: 900,
+                  }}
+                >
+                  RICH
+                </motion.span>
+                <motion.span
+                  animate={{
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    duration: 0.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="font-black text-xl"
+                  style={{
+                    background: "linear-gradient(90deg, #FFD700 0%, #FFC300 30%, #FFB000 60%, #FF9500 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                    fontWeight: 900,
+                  }}
+                >
+                  +{parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {token}
+                </motion.span>
+              </div>
+              
+              <motion.p
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-xs font-bold mt-1 relative z-10"
+                style={{
+                  background: "linear-gradient(90deg, #FFD700 0%, #FFC300 30%, #FFB000 60%, #FF9500 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  fontWeight: 900,
+                }}
+              >
+                💰 Chúc mừng! Bạn vừa nhận được tiền! 💎
+              </motion.p>
+            </div>
+          </motion.div>
           
           {/* Golden Fireworks effects */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
@@ -331,34 +304,34 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-              animate={{
-                opacity: [0, 1, 1, 0],
-                scale: [0, 1.5, 1, 0],
-                x: [0, Math.cos(angle) * distance],
-                y: [0, Math.sin(angle) * distance],
-                background: [
-                  "#FF0000", // Red
-                  "#FF7F00", // Orange
-                  "#FFFF00", // Yellow
-                  "#00FF00", // Green
-                  "#00FFFF", // Cyan
-                  "#0000FF", // Blue
-                  "#9400D3", // Violet
-                  "#FF0000", // Back to Red
-                ],
-              }}
+                  animate={{
+                    opacity: [0, 1, 1, 0],
+                    scale: [0, 1.5, 1, 0],
+                    x: [0, Math.cos(angle) * distance],
+                    y: [0, Math.sin(angle) * distance],
+                    background: [
+                      "#FF0000", // Red
+                      "#FF7F00", // Orange
+                      "#FFFF00", // Yellow
+                      "#00FF00", // Green
+                      "#00FFFF", // Cyan
+                      "#0000FF", // Blue
+                      "#9400D3", // Violet
+                      "#FF0000", // Back to Red
+                    ],
+                  }}
                   transition={{
                     duration: 1.5,
                     repeat: Infinity,
                     delay: i * 0.05,
                     ease: "easeOut",
                   }}
-              className="absolute w-2 h-2 rounded-full"
-              style={{
-                left: '50%',
-                top: '50%',
-                boxShadow: "0 0 20px currentColor, 0 0 40px currentColor",
-              }}
+                  className="absolute w-2 h-2 rounded-full"
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    boxShadow: "0 0 20px currentColor, 0 0 40px currentColor",
+                  }}
                 />
               );
             })}
