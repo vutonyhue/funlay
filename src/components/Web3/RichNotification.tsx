@@ -16,6 +16,18 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
   const [musicUrl, setMusicUrl] = useState<string | null>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
+  // Kill ALL voice synthesis immediately on mount and continuously
+  useEffect(() => {
+    const killVoice = () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+    killVoice();
+    const interval = setInterval(killVoice, 100); // Kill voice every 100ms
+    return () => clearInterval(interval);
+  }, []);
+
   // Fetch user's custom music URL
   useEffect(() => {
     const fetchMusicUrl = async () => {
@@ -54,29 +66,34 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
 
   useEffect(() => {
     if (show) {
-      // Cancel any ongoing speech synthesis to stop any voice
+      // FORCE KILL all voice synthesis - NO VOICE AT ALL
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+        window.speechSynthesis.pause();
       }
 
-      // Play notification sound - custom music if available, otherwise default bell sound
+      // Play notification sound IMMEDIATELY - custom music if available, otherwise default bell sound
       let notificationAudio: HTMLAudioElement | null = null;
       
       if (musicUrl) {
-        // User has custom music linked
         notificationAudio = new Audio(musicUrl);
         notificationAudio.volume = 0.5;
         notificationAudio.loop = true;
       } else {
-        // Default notification bell sound (coin/cash register sound)
         notificationAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2058/2058-preview.mp3');
         notificationAudio.volume = 0.6;
         notificationAudio.loop = true;
       }
       
+      // Play immediately without delay
       notificationAudio.play().catch(err => console.error("Error playing notification sound:", err));
 
-      // NO voice notification - completely removed
+      // Keep killing voice repeatedly during notification display
+      const voiceKillInterval = setInterval(() => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+      }, 50);
 
       // Trigger massive confetti celebration
       const duration = 10000;
@@ -122,6 +139,7 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
       // Auto close after 10 seconds
       const timer = setTimeout(() => {
         clearInterval(confettiInterval);
+        clearInterval(voiceKillInterval);
         if (notificationAudio) {
           notificationAudio.pause();
           notificationAudio.currentTime = 0;
@@ -132,11 +150,12 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
       return () => {
         clearTimeout(timer);
         clearInterval(confettiInterval);
+        clearInterval(voiceKillInterval);
         if (notificationAudio) {
           notificationAudio.pause();
           notificationAudio.currentTime = 0;
         }
-        // Also cancel any speech synthesis on cleanup
+        // Force kill voice on cleanup
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
         }
@@ -148,19 +167,20 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
+          initial={{ opacity: 0, scale: 0.8 }}
           animate={{ 
             opacity: 1, 
             scale: 1,
             x: position.x,
             y: position.y,
           }}
-          exit={{ opacity: 0, scale: 0.5 }}
+          exit={{ opacity: 0, scale: 0.8 }}
           transition={{
             type: "spring",
-            stiffness: 300,
-            damping: 20,
-            mass: 1,
+            stiffness: 500,
+            damping: 25,
+            mass: 0.5,
+            duration: 0.15,
           }}
           className="fixed top-4 left-4 p-4 rounded-2xl shadow-2xl overflow-hidden flex items-center gap-3"
           style={{
