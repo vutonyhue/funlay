@@ -13,6 +13,7 @@ import { Copy, QrCode, Share2 } from "lucide-react";
 import { Honobar } from "@/components/Layout/Honobar";
 import { GlassmorphismStats } from "@/components/Profile/GlassmorphismStats";
 import { RewardClaimSection } from "@/components/Profile/RewardClaimSection";
+import { PremiumStarfieldBackground } from "@/components/Layout/PremiumStarfieldBackground";
 import { QRCodeSVG } from "qrcode.react";
 import {
   DropdownMenu,
@@ -374,11 +375,12 @@ export default function Channel() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <PremiumStarfieldBackground />
       <Header onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <main className="pt-16 lg:pl-64">
+      <main className="pt-16 lg:pl-64 relative z-10">
         {profile?.music_enabled && profile.background_music_url && (
           <BackgroundMusicPlayer musicUrl={profile.background_music_url} />
         )}

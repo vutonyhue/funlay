@@ -159,6 +159,25 @@ export const GlassmorphismStats = ({ userId, channelId }: GlassmorphismStatsProp
             whileHover={{ scale: 1.03, y: -4 }}
             className="relative group"
           >
+            {/* Rainbow breathing border */}
+            <motion.div
+              className="absolute -inset-[1px] rounded-2xl opacity-50 group-hover:opacity-80"
+              style={{
+                background: `linear-gradient(90deg, 
+                  #ff0080, #ff8c00, #ffd700, #00ff00, #00e7ff, #7a2bff, #ff00e5, #ff0080
+                )`,
+                backgroundSize: '400% 100%',
+              }}
+              animate={{
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            />
+            
             {/* Glassmorphism card */}
             <div 
               className="relative overflow-hidden rounded-2xl p-4 h-28 flex flex-col justify-between"
@@ -166,7 +185,6 @@ export const GlassmorphismStats = ({ userId, channelId }: GlassmorphismStatsProp
                 background: 'rgba(255,255,255,0.05)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: `
                   0 8px 32px rgba(0,0,0,0.2),
                   inset 0 1px 0 rgba(255,255,255,0.1),

@@ -139,6 +139,25 @@ export const RewardClaimSection = ({ userId, isOwnProfile = false }: RewardClaim
         transition={{ duration: 0.6, type: "spring" }}
         className="relative overflow-hidden rounded-3xl mb-6"
       >
+        {/* Rainbow breathing outer glow */}
+        <motion.div
+          className="absolute -inset-[2px] rounded-3xl opacity-60"
+          style={{
+            background: `linear-gradient(90deg, 
+              #ff0080, #ff8c00, #ffd700, #00ff00, #00e7ff, #7a2bff, #ff00e5, #ff0080
+            )`,
+            backgroundSize: '400% 100%',
+          }}
+          animate={{
+            backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+            opacity: [0.4, 0.7, 0.4],
+          }}
+          transition={{
+            backgroundPosition: { duration: 8, repeat: Infinity, ease: "linear" },
+            opacity: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+          }}
+        />
+        
         {/* 3D Metallic Gold Border */}
         <div 
           className="absolute inset-0 rounded-3xl"
