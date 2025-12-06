@@ -54,7 +54,7 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
 
   useEffect(() => {
     if (show) {
-      // Only play custom music if user has linked one - NO default ringtone
+      // Only play custom music if user has linked one - NO default ringtone or voice
       let customAudio: HTMLAudioElement | null = null;
       if (musicUrl) {
         customAudio = new Audio(musicUrl);
@@ -63,47 +63,12 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
         customAudio.play().catch(err => console.error("Error playing music:", err));
       }
 
-      // Play "RICH RICH RICH" voice notification
-      const speakNotification = () => {
-        const utterance = new SpeechSynthesisUtterance("RICH RICH RICH");
-        utterance.pitch = 2.0; // High pitch cute voice
-        utterance.rate = 0.9;
-        utterance.volume = 1;
-        utterance.lang = 'en-US';
-        
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          const preferredVoice = voices.find(voice => 
-            voice.name.toLowerCase().includes("female") || voice.name.toLowerCase().includes("samantha")
-          );
-          if (preferredVoice) {
-            utterance.voice = preferredVoice;
-          }
-        }
-        
-        window.speechSynthesis.speak(utterance);
-      };
-      
-      // Speak voice notification repeatedly
-      let voiceInterval: NodeJS.Timeout | null = null;
-      
-      if (window.speechSynthesis.getVoices().length === 0) {
-        window.speechSynthesis.onvoiceschanged = () => {
-          speakNotification();
-        };
-      } else {
-        speakNotification();
-      }
-      
-      // Repeat voice every 3 seconds
-      voiceInterval = setInterval(() => {
-        speakNotification();
-      }, 3000);
+      // NO voice notification - removed as per user request
 
       // Trigger massive confetti celebration
       const duration = 10000;
       const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 99999 };
 
       const randomInRange = (min: number, max: number) => {
         return Math.random() * (max - min) + min;
@@ -144,24 +109,20 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
       // Auto close after 10 seconds
       const timer = setTimeout(() => {
         clearInterval(confettiInterval);
-        if (voiceInterval) clearInterval(voiceInterval);
         if (customAudio) {
           customAudio.pause();
           customAudio.currentTime = 0;
         }
-        window.speechSynthesis.cancel();
         onClose();
       }, 10000);
 
       return () => {
         clearTimeout(timer);
         clearInterval(confettiInterval);
-        if (voiceInterval) clearInterval(voiceInterval);
         if (customAudio) {
           customAudio.pause();
           customAudio.currentTime = 0;
         }
-        window.speechSynthesis.cancel();
       };
     }
   }, [show, onClose, musicUrl]);
@@ -184,8 +145,9 @@ export const RichNotification = ({ show, amount, token, count, onClose, userId }
             damping: 20,
             mass: 1,
           }}
-          className="fixed top-4 left-4 z-50 p-4 rounded-2xl shadow-2xl overflow-hidden flex items-center gap-3"
+          className="fixed top-4 left-4 p-4 rounded-2xl shadow-2xl overflow-hidden flex items-center gap-3"
           style={{
+            zIndex: 99999,
             background: "white",
             border: "4px solid transparent",
             backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #00FFFF, #0000FF, #9400D3)",
