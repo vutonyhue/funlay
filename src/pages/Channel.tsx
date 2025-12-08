@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BackgroundMusicPlayer } from "@/components/BackgroundMusicPlayer";
 import { Copy, QrCode, Share2 } from "lucide-react";
-import { Honobar } from "@/components/Layout/Honobar";
+import { CompactHonobar } from "@/components/Layout/CompactHonobar";
 import { RewardStats } from "@/components/Profile/RewardStats";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -382,8 +382,8 @@ export default function Channel() {
           <BackgroundMusicPlayer musicUrl={profile.background_music_url} />
         )}
 
-        {/* Channel Banner */}
-        <div className="relative h-48 bg-gradient-to-r from-primary to-secondary">
+        {/* Channel Banner with Compact Honobar */}
+        <div className="relative h-48 bg-gradient-to-r from-[#00E7FF]/30 via-[#7A2BFF]/20 to-[#FFD700]/30">
           {channel.banner_url && (
             <img
               src={channel.banner_url}
@@ -391,8 +391,8 @@ export default function Channel() {
               className="w-full h-full object-cover"
             />
           )}
-          {/* Honobar positioned in top-right corner */}
-          <Honobar />
+          {/* Compact Honobar positioned in top-right corner of cover photo */}
+          <CompactHonobar />
         </div>
 
         {/* Channel Info */}

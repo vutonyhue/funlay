@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Sparkles, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Sparkles, Bot, User, Mic, MicOff, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,7 +16,91 @@ export const AIChatbot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Check for voice support
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setVoiceSupported(true);
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = "vi-VN";
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0].transcript)
+          .join("");
+        setInput(transcript);
+        
+        // If final result, send the message
+        if (event.results[0].isFinal) {
+          setIsListening(false);
+          if (transcript.trim()) {
+            setTimeout(() => streamChat(transcript.trim()), 500);
+            setInput("");
+          }
+        }
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error("Speech recognition error:", event.error);
+        setIsListening(false);
+        if (event.error === "not-allowed") {
+          toast.error("Vui lòng cho phép truy cập microphone");
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleVoice = useCallback(() => {
+    if (!voiceSupported) {
+      toast.error("Trình duyệt không hỗ trợ voice commands");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+        toast.info("Đang lắng nghe... Nói gì đi! 🎤");
+      } catch (error) {
+        console.error("Voice start error:", error);
+        toast.error("Không thể bắt đầu voice command");
+      }
+    }
+  }, [isListening, voiceSupported]);
+
+  // Text-to-speech for AI responses
+  const speakResponse = (text: string) => {
+    if ("speechSynthesis" in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "vi-VN";
+      utterance.rate = 1;
+      utterance.pitch = 1.1;
+      
+      // Try to use a Vietnamese voice
+      const voices = window.speechSynthesis.getVoices();
+      const viVoice = voices.find(v => v.lang.includes("vi")) || voices[0];
+      if (viVoice) utterance.voice = viVoice;
+      
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -164,6 +248,12 @@ export const AIChatbot = () => {
                     Xin chào! Mình là FUN Play AI.<br />
                     Hỏi mình bất cứ điều gì nhé! 🌟
                   </p>
+                  {voiceSupported && (
+                    <p className="text-xs text-[#00E7FF] mt-2 flex items-center justify-center gap-1">
+                      <Mic className="w-3 h-3" />
+                      Nhấn nút mic để dùng voice command
+                    </p>
+                  )}
                 </div>
               )}
               
@@ -213,15 +303,29 @@ export const AIChatbot = () => {
               </div>
             </ScrollArea>
 
-            {/* Input */}
+            {/* Input with Voice */}
             <div className="p-4 border-t border-border">
               <div className="flex gap-2">
+                {voiceSupported && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={toggleVoice}
+                    className={`shrink-0 transition-all ${
+                      isListening 
+                        ? "bg-red-500 text-white border-red-500 animate-pulse" 
+                        : "border-[#00E7FF]/30 hover:border-[#00E7FF] hover:bg-[#00E7FF]/10"
+                    }`}
+                  >
+                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </Button>
+                )}
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  placeholder="Nhập tin nhắn..."
-                  className="flex-1 border-[#00E7FF]/30 focus:border-[#00E7FF]"
+                  placeholder={isListening ? "Đang lắng nghe..." : "Nhập tin nhắn..."}
+                  className={`flex-1 border-[#00E7FF]/30 focus:border-[#00E7FF] ${isListening ? "border-red-300 bg-red-50" : ""}`}
                   disabled={isLoading}
                 />
                 <Button
@@ -232,6 +336,16 @@ export const AIChatbot = () => {
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
+              {isListening && (
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-xs text-red-500 mt-2 text-center flex items-center justify-center gap-1"
+                >
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  Đang lắng nghe... Nói rõ ràng nhé!
+                </motion.p>
+              )}
             </div>
           </motion.div>
         )}
