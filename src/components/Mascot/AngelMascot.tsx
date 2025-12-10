@@ -124,40 +124,25 @@ export const AngelMascot: React.FC<AngelMascotProps> = ({ onTipReceived }) => {
         onMouseLeave={handleMouseLeave}
         whileHover={{ filter: 'brightness(1.2)', scale: 1.1 }}
       >
-        {/* Angel Video - Looping - Transparent background using advanced blend */}
+        {/* Angel Video - Pure character, no frame, transparent background */}
         <motion.div
-          className="w-full h-full relative"
+          className="w-full h-full"
           animate={controls}
           style={{
             filter: isExcited 
-              ? 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 40px rgba(0, 231, 255, 0.5))' 
-              : 'drop-shadow(0 0 12px rgba(255, 215, 0, 0.5)) drop-shadow(0 0 25px rgba(0, 231, 255, 0.3))'
+              ? 'drop-shadow(0 0 15px rgba(255, 215, 0, 0.6))' 
+              : 'drop-shadow(0 0 8px rgba(255, 215, 0, 0.4))'
           }}
         >
-          {/* Layer 1: Screen blend to remove dark backgrounds */}
           <video
             autoPlay
             loop
             muted
             playsInline
-            className="absolute inset-0 w-full h-full object-contain"
+            className="w-full h-full object-contain"
             style={{
               mixBlendMode: 'screen',
-              filter: 'contrast(1.1) saturate(1.2) brightness(1.05)',
-            }}
-          >
-            <source src="/videos/angel-mascot-new.mp4" type="video/mp4" />
-          </video>
-          {/* Layer 2: Lighten blend for enhanced transparency effect */}
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-contain opacity-60"
-            style={{
-              mixBlendMode: 'lighten',
-              filter: 'contrast(1.2) brightness(1.1)',
+              background: 'transparent',
             }}
           >
             <source src="/videos/angel-mascot-new.mp4" type="video/mp4" />
