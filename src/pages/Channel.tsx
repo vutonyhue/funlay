@@ -102,8 +102,31 @@ export default function Channel() {
       )
       .subscribe();
 
+    // Real-time subscription for video updates (view counts)
+    const videoSub = supabase
+      .channel(`videos-channel-${channel.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'videos',
+        },
+        (payload) => {
+          console.log('Video updated in real-time:', payload);
+          setVideos(prev => 
+            prev.map(v => v.id === payload.new.id 
+              ? { ...v, view_count: payload.new.view_count } 
+              : v
+            )
+          );
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channelSub);
+      supabase.removeChannel(videoSub);
     };
   }, [channel?.id]);
 

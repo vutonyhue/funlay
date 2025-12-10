@@ -133,6 +133,29 @@ const Index = () => {
       )
       .subscribe();
 
+    // Real-time subscription for video updates (view counts, likes, etc.)
+    const videoChannel = supabase
+      .channel('video-updates-homepage')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'videos',
+        },
+        (payload) => {
+          console.log('Video updated in real-time:', payload);
+          setVideos(prevVideos => 
+            prevVideos.map(video => 
+              video.id === payload.new.id
+                ? { ...video, view_count: payload.new.view_count }
+                : video
+            )
+          );
+        }
+      )
+      .subscribe();
+
     // Listen for profile-updated event to refetch videos to get updated avatars
     const handleProfileUpdate = () => {
       fetchVideos();
@@ -142,6 +165,7 @@ const Index = () => {
 
     return () => {
       supabase.removeChannel(profileChannel);
+      supabase.removeChannel(videoChannel);
       window.removeEventListener('profile-updated', handleProfileUpdate);
     };
   }, [toast]);
