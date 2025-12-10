@@ -124,9 +124,9 @@ export const AngelMascot: React.FC<AngelMascotProps> = ({ onTipReceived }) => {
         onMouseLeave={handleMouseLeave}
         whileHover={{ filter: 'brightness(1.2)', scale: 1.1 }}
       >
-        {/* Angel Video - Looping - Free flying without frame */}
+        {/* Angel Video - Looping - Transparent background using advanced blend */}
         <motion.div
-          className="w-full h-full"
+          className="w-full h-full relative"
           animate={controls}
           style={{
             filter: isExcited 
@@ -134,14 +134,30 @@ export const AngelMascot: React.FC<AngelMascotProps> = ({ onTipReceived }) => {
               : 'drop-shadow(0 0 12px rgba(255, 215, 0, 0.5)) drop-shadow(0 0 25px rgba(0, 231, 255, 0.3))'
           }}
         >
+          {/* Layer 1: Screen blend to remove dark backgrounds */}
           <video
             autoPlay
             loop
             muted
             playsInline
-            className="w-full h-full object-contain"
+            className="absolute inset-0 w-full h-full object-contain"
             style={{
               mixBlendMode: 'screen',
+              filter: 'contrast(1.1) saturate(1.2) brightness(1.05)',
+            }}
+          >
+            <source src="/videos/angel-mascot-new.mp4" type="video/mp4" />
+          </video>
+          {/* Layer 2: Lighten blend for enhanced transparency effect */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-contain opacity-60"
+            style={{
+              mixBlendMode: 'lighten',
+              filter: 'contrast(1.2) brightness(1.1)',
             }}
           >
             <source src="/videos/angel-mascot-new.mp4" type="video/mp4" />
