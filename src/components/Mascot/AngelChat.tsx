@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Sparkles, Heart } from 'lucide-react';
+import { X, Send, Sparkles, Heart, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -27,6 +27,9 @@ export const AngelChat: React.FC<AngelChatProps> = ({ isOpen, onClose }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +37,62 @@ export const AngelChat: React.FC<AngelChatProps> = ({ isOpen, onClose }) => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const speakText = async (text: string) => {
+    if (!voiceEnabled) return;
+    
+    try {
+      setIsSpeaking(true);
+      
+      // Clean text for TTS (remove emojis for better speech)
+      const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[♡✨🌟💖👼]/gu, '').trim();
+      
+      if (!cleanText) {
+        setIsSpeaking(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('angel-voice', {
+        body: { text: cleanText }
+      });
+
+      if (error) {
+        console.error('Voice error:', error);
+        setIsSpeaking(false);
+        return;
+      }
+
+      // Create audio from blob
+      const audioUrl = URL.createObjectURL(data);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      await audio.play();
+    } catch (error) {
+      console.error('Speech error:', error);
+      setIsSpeaking(false);
+    }
+  };
 
   const sendMessage = async (userMessage: string) => {
     setIsLoading(true);
@@ -73,6 +132,8 @@ export const AngelChat: React.FC<AngelChatProps> = ({ isOpen, onClose }) => {
 
       setMessages(prev => [...prev, { role: 'assistant', content, provider }]);
       
+      // Auto-speak the response
+      speakText(content);
     } catch (error) {
       console.error('Chat error:', error);
       setMessages(prev => [...prev, { 
@@ -140,6 +201,24 @@ export const AngelChat: React.FC<AngelChatProps> = ({ isOpen, onClose }) => {
                 </div>
               </div>
             </div>
+            
+            {/* Voice toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`absolute top-3 right-12 hover:bg-primary/20 ${isSpeaking ? 'text-primary animate-pulse' : ''}`}
+              onClick={() => {
+                setVoiceEnabled(!voiceEnabled);
+                if (audioRef.current) {
+                  audioRef.current.pause();
+                  setIsSpeaking(false);
+                }
+              }}
+              title={voiceEnabled ? 'Tắt giọng nói' : 'Bật giọng nói'}
+            >
+              {voiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </Button>
+            
             <Button
               variant="ghost"
               size="icon"
@@ -190,7 +269,15 @@ export const AngelChat: React.FC<AngelChatProps> = ({ isOpen, onClose }) => {
                             {msg.provider === 'grok' ? '🚀 Grok' : msg.provider === 'chatgpt' ? '🤖 ChatGPT' : '✨ Gemini'}
                           </span>
                         )}
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 items-center">
+                          {/* Replay voice button */}
+                          <button
+                            onClick={() => speakText(msg.content)}
+                            className="p-1 hover:bg-primary/10 rounded-full transition-colors"
+                            title="Nghe lại"
+                          >
+                            <Volume2 className={`w-3 h-3 ${isSpeaking ? 'text-primary animate-pulse' : 'text-muted-foreground'}`} />
+                          </button>
                           <Heart className="w-3 h-3 text-pink-400" />
                           <Sparkles className="w-3 h-3 text-primary" />
                         </div>

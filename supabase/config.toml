@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.angel-chat]
 verify_jwt = false
+
+[functions.angel-voice]
+verify_jwt = false
