@@ -1,4 +1,4 @@
-import { Home, Zap, Users, Library, History, Video, Clock, ThumbsUp, Wallet, ListVideo, FileText, Tv, Trophy, Coins, UserPlus, Image } from "lucide-react";
+import { Home, Zap, Users, Library, History, Video, Clock, ThumbsUp, Wallet, ListVideo, FileText, Tv, Trophy, Coins, UserPlus, Image, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ const navItems = [
   { icon: Home, label: "Home", href: "/" },
   { icon: Zap, label: "Shorts", href: "/shorts" },
   { icon: Users, label: "Subscriptions", href: "/subscriptions" },
+  { icon: Sparkles, label: "Meditate with Father", href: "/meditate", special: true },
 ];
 
 const libraryItems = [
@@ -61,18 +62,22 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <div className="py-2">
             {/* Main navigation */}
             <div className="px-3 py-2">
-              {navItems.map((item) => (
+            {navItems.map((item) => (
                 <Button
                   key={item.label}
                   variant="ghost"
                   onClick={() => handleNavigation(item.href)}
                   className={cn(
                     "w-full justify-start gap-6 px-3 py-2.5 h-auto hover:bg-hover-yellow hover:text-primary transition-all duration-300",
-                    location.pathname === item.href && "bg-hover-yellow text-primary font-semibold"
+                    location.pathname === item.href && "bg-hover-yellow text-primary font-semibold",
+                    (item as any).special && "bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-amber-500/10 hover:from-cyan-500/20 hover:via-purple-500/20 hover:to-amber-500/20"
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
+                  <item.icon className={cn("h-5 w-5", (item as any).special && "text-cyan-400")} />
+                  <span className={(item as any).special ? "bg-gradient-to-r from-cyan-400 via-purple-400 to-amber-400 bg-clip-text text-transparent font-medium" : ""}>
+                    {item.label}
+                  </span>
+                  {(item as any).special && <span className="ml-auto text-sm">✨</span>}
                 </Button>
               ))}
             </div>

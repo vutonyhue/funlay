@@ -25,6 +25,7 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStage, setUploadStage] = useState("");
+  const [isMeditation, setIsMeditation] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -191,6 +192,7 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
         video_url: videoUrl,
         thumbnail_url: thumbnailUrl,
         is_public: true,
+        category: isMeditation ? "meditation" : "general",
       });
 
       if (videoError) {
@@ -213,6 +215,7 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
         setVideoFile(null);
         setThumbnailFile(null);
         setYoutubeUrl("");
+        setIsMeditation(false);
         setUploadProgress(0);
         setUploadStage("");
         onOpenChange(false);
@@ -380,6 +383,27 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
                 <p className="text-sm text-muted-foreground mt-2">{thumbnailFile.name}</p>
               )}
             </div>
+          </div>
+
+          {/* Meditation Category */}
+          <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-amber-500/10 border border-cyan-500/20">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isMeditation}
+                onChange={(e) => setIsMeditation(e.target.checked)}
+                disabled={uploading}
+                className="w-5 h-5 rounded border-cyan-500 text-cyan-500 focus:ring-cyan-500"
+              />
+              <div>
+                <span className="font-medium bg-gradient-to-r from-cyan-400 via-purple-400 to-amber-400 bg-clip-text text-transparent">
+                  ✨ Đăng lên mục "Meditate with Father"
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Video thiền định & chữa lành sẽ hiển thị trong không gian thiền định đặc biệt
+                </p>
+              </div>
+            </label>
           </div>
 
           {/* Upload Progress */}

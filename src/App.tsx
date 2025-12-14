@@ -27,6 +27,7 @@ import Referral from "./pages/Referral";
 import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NFTGallery from "./pages/NFTGallery";
+import Meditate from "./pages/Meditate";
 import { wagmiConfig } from '@/lib/web3Config';
 import { useCursorBeam } from './hooks/useCursorBeam';
 import { GlobalPaymentNotifications } from './components/Web3/GlobalPaymentNotifications';
@@ -67,6 +68,7 @@ function AppContent() {
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/nft-gallery" element={<NFTGallery />} />
+        <Route path="/meditate" element={<Meditate />} />
         <Route path="/install" element={<InstallPWA />} />
         {/* Temporary redirect routes for missing pages */}
         <Route path="/shorts" element={<Index />} />

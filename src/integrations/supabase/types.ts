@@ -218,6 +218,78 @@ export type Database = {
           },
         ]
       }
+      meditation_playlist_videos: {
+        Row: {
+          created_at: string
+          id: string
+          playlist_id: string
+          position: number
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          playlist_id: string
+          position?: number
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          playlist_id?: string
+          position?: number
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meditation_playlist_videos_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "meditation_playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meditation_playlist_videos_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meditation_playlists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_featured: boolean | null
+          name: string
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_featured?: boolean | null
+          name: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_featured?: boolean | null
+          name?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_statistics: {
         Row: {
           active_users: number
@@ -579,6 +651,7 @@ export type Database = {
       }
       videos: {
         Row: {
+          category: string | null
           channel_id: string
           comment_count: number | null
           created_at: string
@@ -596,6 +669,7 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          category?: string | null
           channel_id: string
           comment_count?: number | null
           created_at?: string
@@ -613,6 +687,7 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          category?: string | null
           channel_id?: string
           comment_count?: number | null
           created_at?: string
