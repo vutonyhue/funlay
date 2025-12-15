@@ -1,4 +1,4 @@
-import { Home, Zap, Users, Library, History, Video, Clock, ThumbsUp, Wallet, ListVideo, FileText, Tv, Trophy, Coins, UserPlus, Image, Sparkles } from "lucide-react";
+import { Home, Zap, Users, Library, History, Video, Clock, ThumbsUp, Wallet, ListVideo, FileText, Tv, Trophy, Coins, UserPlus, Image, Sparkles, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ const navItems = [
   { icon: Zap, label: "Shorts", href: "/shorts" },
   { icon: Users, label: "Subscriptions", href: "/subscriptions" },
   { icon: Sparkles, label: "Meditate with Father", href: "/meditate", special: true },
+  { icon: Music, label: "Tạo Nhạc Ánh Sáng", href: "/create-music", special: true },
 ];
 
 const libraryItems = [

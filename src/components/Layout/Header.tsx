@@ -1,4 +1,4 @@
-import { Search, Video, Bell, Menu, Play, User as UserIcon, LogOut, Settings, Radio, SquarePen, Plus, FileVideo, List } from "lucide-react";
+import { Search, Video, Bell, Menu, Play, User as UserIcon, LogOut, Settings, Radio, SquarePen, Plus, FileVideo, List, Music } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,6 +155,10 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               <DropdownMenuItem onClick={() => setUploadModalOpen(true)}>
                 <FileVideo className="mr-2 h-4 w-4" />
                 Tải video lên
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/create-music")}>
+                <Music className="mr-2 h-4 w-4 text-cyan-500" />
+                Tạo Nhạc Ánh Sáng
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/channel/" + user.id)}>
                 <Settings className="mr-2 h-4 w-4" />
