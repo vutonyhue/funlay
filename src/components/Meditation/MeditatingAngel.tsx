@@ -22,18 +22,17 @@ export const MeditatingAngel = () => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 2, ease: "easeOut" }}
     >
-      {/* Meditation Aura */}
+      {/* Meditation Aura - Golden theme */}
       <motion.div
         className="absolute inset-0 -m-8"
         animate={{
           boxShadow: [
-            "0 0 40px 20px rgba(0, 231, 255, 0.1)",
-            "0 0 60px 30px rgba(168, 85, 247, 0.15)",
-            "0 0 40px 20px rgba(255, 215, 0, 0.1)",
-            "0 0 60px 30px rgba(0, 231, 255, 0.15)",
+            "0 0 40px 20px rgba(250, 204, 21, 0.15)",
+            "0 0 60px 30px rgba(255, 215, 0, 0.2)",
+            "0 0 40px 20px rgba(250, 204, 21, 0.15)",
           ],
         }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         style={{ borderRadius: "50%" }}
       />
 
@@ -49,10 +48,10 @@ export const MeditatingAngel = () => {
           ease: "easeInOut",
         }}
       >
-        {/* Lotus Base */}
+        {/* Lotus Base - Golden */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-8 md:w-24 md:h-10">
           <motion.div
-            className="w-full h-full bg-gradient-to-t from-pink-400 via-pink-300 to-pink-200 rounded-t-full opacity-60"
+            className="w-full h-full bg-gradient-to-t from-amber-400 via-yellow-300 to-amber-200 rounded-t-full opacity-70"
             animate={{
               scale: [1, 1.05, 1],
             }}
@@ -71,15 +70,15 @@ export const MeditatingAngel = () => {
           loop
           muted
           playsInline
-          className="w-full h-full object-contain opacity-90"
-          style={{ mixBlendMode: "screen" }}
+          className="w-full h-full object-contain opacity-95"
+          style={{ mixBlendMode: "multiply" }}
         />
 
-        {/* Halo Effect */}
+        {/* Halo Effect - Golden */}
         <motion.div
           className="absolute -top-4 left-1/2 -translate-x-1/2 w-16 h-4 md:w-20 md:h-5"
           animate={{
-            opacity: [0.6, 1, 0.6],
+            opacity: [0.7, 1, 0.7],
             scale: [1, 1.1, 1],
           }}
           transition={{
@@ -88,21 +87,22 @@ export const MeditatingAngel = () => {
             ease: "easeInOut",
           }}
         >
-          <div className="w-full h-full bg-gradient-to-r from-transparent via-amber-300 to-transparent rounded-full blur-sm" />
+          <div className="w-full h-full bg-gradient-to-r from-transparent via-amber-400 to-transparent rounded-full blur-sm" />
         </motion.div>
 
-        {/* Sparkles around */}
+        {/* Golden Sparkles around */}
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 bg-amber-300 rounded-full"
+            className="absolute w-1.5 h-1.5 bg-amber-400 rounded-full"
             style={{
               left: `${20 + (i % 3) * 30}%`,
               top: `${10 + Math.floor(i / 3) * 40}%`,
+              boxShadow: "0 0 6px rgba(250, 204, 21, 0.8)",
             }}
             animate={{
               opacity: [0, 1, 0],
-              scale: [0.5, 1, 0.5],
+              scale: [0.5, 1.2, 0.5],
             }}
             transition={{
               duration: 2,
@@ -113,15 +113,6 @@ export const MeditatingAngel = () => {
           />
         ))}
       </motion.div>
-
-      {/* Peaceful Message */}
-      <motion.p
-        className="text-center text-xs text-cyan-300/70 mt-2 font-light"
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 4, repeat: Infinity }}
-      >
-        Om Shanti ✨
-      </motion.p>
     </motion.div>
   );
 };

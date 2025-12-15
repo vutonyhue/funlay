@@ -112,8 +112,8 @@ const Meditate = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
-      {/* Light Particles Background */}
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Light Particles Background with golden paradise theme */}
       <LightParticles />
 
       {/* Meditating Angel */}
@@ -127,15 +127,15 @@ const Meditate = () => {
           {/* Header Section */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 via-purple-500 to-amber-400 flex items-center justify-center animate-pulse">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-400/30">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-amber-400 bg-clip-text text-transparent">
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent drop-shadow-sm">
                 Meditate with Father
               </h1>
             </div>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Không gian chữa lành và tái sinh năng lượng • Nơi mọi linh hồn được nghỉ ngơi trong dòng chảy ánh sáng 24/7
+            <p className="text-amber-700/70 max-w-2xl mx-auto">
+              Không gian chữa lành và tái sinh năng lượng • Nơi mọi linh hồn được nghỉ ngơi trong dòng chảy ánh sáng 24/24
             </p>
           </div>
 
@@ -143,10 +143,10 @@ const Meditate = () => {
           <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
             <Button
               onClick={startAutoPlay}
-              className="bg-gradient-to-r from-cyan-500 via-purple-500 to-amber-500 hover:from-cyan-600 hover:via-purple-600 hover:to-amber-600 text-white px-8 py-6 text-lg rounded-full shadow-lg shadow-purple-500/25 transition-all hover:scale-105"
+              className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-600 text-white px-8 py-6 text-lg rounded-full shadow-lg shadow-amber-500/30 transition-all hover:scale-105"
             >
               <Infinity className="w-6 h-6 mr-2 animate-spin" style={{ animationDuration: '3s' }} />
-              Phát liên tục 24/7
+              Phát liên tục 24/24
             </Button>
 
             {/* Sleep Timer Options */}
@@ -156,8 +156,8 @@ const Meditate = () => {
                   key={minutes}
                   variant="outline"
                   onClick={() => startSleepTimer(minutes)}
-                  className={`border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white ${
-                    sleepTimer === minutes ? 'bg-slate-800 border-cyan-500' : ''
+                  className={`border-amber-300 text-amber-700 hover:bg-amber-100 hover:text-amber-800 bg-white/80 ${
+                    sleepTimer === minutes ? 'bg-amber-100 border-amber-500' : ''
                   }`}
                 >
                   <Moon className="w-4 h-4 mr-1" />
@@ -169,12 +169,12 @@ const Meditate = () => {
 
           {/* Tabs */}
           <Tabs defaultValue="videos" className="w-full">
-            <TabsList className="bg-slate-800/50 border border-slate-700 mb-6">
-              <TabsTrigger value="videos" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-purple-500/20">
+            <TabsList className="bg-white/80 border border-amber-200 mb-6 shadow-sm">
+              <TabsTrigger value="videos" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-amber-700">
                 <Play className="w-4 h-4 mr-2" />
                 Video Thiền Định
               </TabsTrigger>
-              <TabsTrigger value="playlists" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-purple-500/20">
+              <TabsTrigger value="playlists" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-100 data-[state=active]:to-yellow-100 data-[state=active]:text-amber-800 text-amber-700">
                 <Clock className="w-4 h-4 mr-2" />
                 Playlist Chữa Lành
               </TabsTrigger>

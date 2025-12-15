@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload as UploadIcon, CheckCircle } from "lucide-react";
+import { Upload as UploadIcon, CheckCircle, Plus, Music } from "lucide-react";
+
+interface MeditationPlaylist {
+  id: string;
+  name: string;
+}
 
 interface UploadVideoModalProps {
   open: boolean;
@@ -26,9 +32,94 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStage, setUploadStage] = useState("");
   const [isMeditation, setIsMeditation] = useState(false);
+  
+  // Playlist management
+  const [playlists, setPlaylists] = useState<MeditationPlaylist[]>([]);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
+  const [showNewPlaylist, setShowNewPlaylist] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [newPlaylistDescription, setNewPlaylistDescription] = useState("");
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Fetch user's meditation playlists when meditation checkbox is checked
+  useEffect(() => {
+    if (isMeditation && user) {
+      fetchPlaylists();
+    }
+  }, [isMeditation, user]);
+
+  const fetchPlaylists = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from("meditation_playlists")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setPlaylists(data);
+    }
+  };
+
+  const createNewPlaylist = async (): Promise<string | null> => {
+    if (!user || !newPlaylistName.trim()) return null;
+
+    const { data, error } = await supabase
+      .from("meditation_playlists")
+      .insert({
+        user_id: user.id,
+        name: newPlaylistName.trim(),
+        description: newPlaylistDescription.trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể tạo playlist mới",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    toast({
+      title: "✨ Playlist đã tạo",
+      description: `Đã tạo playlist "${newPlaylistName}"`,
+    });
+
+    return data.id;
+  };
+
+  const addVideoToPlaylist = async (videoId: string, playlistId: string) => {
+    // Get current max position
+    const { data: existingVideos } = await supabase
+      .from("meditation_playlist_videos")
+      .select("position")
+      .eq("playlist_id", playlistId)
+      .order("position", { ascending: false })
+      .limit(1);
+
+    const nextPosition = existingVideos && existingVideos.length > 0 
+      ? existingVideos[0].position + 1 
+      : 0;
+
+    const { error } = await supabase
+      .from("meditation_playlist_videos")
+      .insert({
+        playlist_id: playlistId,
+        video_id: videoId,
+        position: nextPosition,
+      });
+
+    if (error) {
+      console.error("Error adding video to playlist:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +162,15 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
     setUploadStage("Đang chuẩn bị...");
 
     try {
+      // Create new playlist if requested
+      let targetPlaylistId = selectedPlaylistId;
+      if (isMeditation && showNewPlaylist && newPlaylistName.trim()) {
+        const newId = await createNewPlaylist();
+        if (newId) {
+          targetPlaylistId = newId;
+        }
+      }
+
       // Get or create channel
       setUploadStage("Đang kiểm tra kênh...");
       setUploadProgress(5);
@@ -184,7 +284,7 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
       setUploadStage("Đang lưu thông tin...");
       setUploadProgress(93);
 
-      const { error: videoError } = await supabase.from("videos").insert({
+      const { data: videoData, error: videoError } = await supabase.from("videos").insert({
         user_id: user.id,
         channel_id: channelId,
         title,
@@ -193,11 +293,17 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
         thumbnail_url: thumbnailUrl,
         is_public: true,
         category: isMeditation ? "meditation" : "general",
-      });
+      }).select("id").single();
 
       if (videoError) {
         console.error("Database error:", videoError);
         throw new Error(`Lỗi lưu video: ${videoError.message}`);
+      }
+
+      // Add video to playlist if meditation and playlist selected
+      if (isMeditation && targetPlaylistId && videoData?.id) {
+        setUploadStage("Đang thêm vào playlist...");
+        await addVideoToPlaylist(videoData.id, targetPlaylistId);
       }
 
       setUploadProgress(100);
@@ -205,7 +311,9 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
 
       toast({
         title: "Tải video thành công!",
-        description: "Video của bạn đã được đăng tải",
+        description: isMeditation && targetPlaylistId 
+          ? "Video đã được đăng tải và thêm vào playlist!" 
+          : "Video của bạn đã được đăng tải",
       });
 
       // Reset form
@@ -216,6 +324,10 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
         setThumbnailFile(null);
         setYoutubeUrl("");
         setIsMeditation(false);
+        setSelectedPlaylistId("");
+        setShowNewPlaylist(false);
+        setNewPlaylistName("");
+        setNewPlaylistDescription("");
         setUploadProgress(0);
         setUploadStage("");
         onOpenChange(false);
@@ -386,17 +498,17 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
           </div>
 
           {/* Meditation Category */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-amber-500/10 border border-cyan-500/20">
+          <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-amber-500/10 border border-amber-400/30">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isMeditation}
                 onChange={(e) => setIsMeditation(e.target.checked)}
                 disabled={uploading}
-                className="w-5 h-5 rounded border-cyan-500 text-cyan-500 focus:ring-cyan-500"
+                className="w-5 h-5 rounded border-amber-500 text-amber-500 focus:ring-amber-500"
               />
               <div>
-                <span className="font-medium bg-gradient-to-r from-cyan-400 via-purple-400 to-amber-400 bg-clip-text text-transparent">
+                <span className="font-medium bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 bg-clip-text text-transparent">
                   ✨ Đăng lên mục "Meditate with Father"
                 </span>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -404,6 +516,81 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
                 </p>
               </div>
             </label>
+
+            {/* Playlist Selection - Only show when meditation is checked */}
+            {isMeditation && (
+              <div className="mt-4 pt-4 border-t border-amber-300/30 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Music className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm font-medium text-amber-700">Thêm vào playlist thiền định</span>
+                </div>
+
+                {!showNewPlaylist ? (
+                  <>
+                    <Select value={selectedPlaylistId} onValueChange={setSelectedPlaylistId}>
+                      <SelectTrigger className="border-amber-300 bg-white/80">
+                        <SelectValue placeholder="Chọn playlist (tùy chọn)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {playlists.map((playlist) => (
+                          <SelectItem key={playlist.id} value={playlist.id}>
+                            {playlist.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowNewPlaylist(true)}
+                      className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Tạo playlist mới
+                    </Button>
+                  </>
+                ) : (
+                  <div className="space-y-3 p-3 bg-white/50 rounded-lg border border-amber-200">
+                    <div>
+                      <Label className="text-sm text-amber-700">Tên playlist mới</Label>
+                      <Input
+                        value={newPlaylistName}
+                        onChange={(e) => setNewPlaylistName(e.target.value)}
+                        placeholder="VD: Thiền buổi sáng..."
+                        className="mt-1 border-amber-200"
+                        disabled={uploading}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-amber-700">Mô tả (tùy chọn)</Label>
+                      <Textarea
+                        value={newPlaylistDescription}
+                        onChange={(e) => setNewPlaylistDescription(e.target.value)}
+                        placeholder="Mô tả playlist..."
+                        className="mt-1 border-amber-200"
+                        rows={2}
+                        disabled={uploading}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowNewPlaylist(false);
+                        setNewPlaylistName("");
+                        setNewPlaylistDescription("");
+                      }}
+                      className="text-amber-600"
+                    >
+                      ← Quay lại chọn playlist có sẵn
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Upload Progress */}
