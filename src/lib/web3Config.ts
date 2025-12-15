@@ -1,8 +1,8 @@
 import { createWeb3Modal, defaultWagmiConfig } from '@web3modal/wagmi';
 import { bsc } from '@wagmi/core/chains';
 
-// WalletConnect Cloud Project ID - works globally on all devices
-const projectId = '8c5a8b7f9d6e4c3b2a1f0e9d8c7b6a5f';
+// WalletConnect Cloud Project ID - loaded from environment variable for security
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 
 const metadata = {
   name: 'FUN PLAY',
