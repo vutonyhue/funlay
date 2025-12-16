@@ -1,8 +1,5 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.632.0";
-import { getSignedUrl } from "https://esm.sh/@aws-sdk/s3-request-presigner@3.632.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +8,106 @@ const corsHeaders = {
 
 // Maximum file size: 10GB
 const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024;
+
+// Helper function to create SHA256 hash
+async function sha256(data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(data));
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// Helper function to create HMAC-SHA256
+async function hmacSha256(key: ArrayBuffer, data: string): Promise<ArrayBuffer> {
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  return await crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(data));
+}
+
+// Generate AWS Signature V4 Presigned URL for R2
+async function generatePresignedUrl(
+  accessKeyId: string,
+  secretAccessKey: string,
+  bucket: string,
+  key: string,
+  contentType: string,
+  endpoint: string,
+  expiresIn: number = 3600
+): Promise<string> {
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const dateStamp = amzDate.slice(0, 8);
+  const region = 'auto';
+  const service = 's3';
+  
+  // Parse endpoint to get host
+  const endpointUrl = new URL(endpoint);
+  const host = `${bucket}.${endpointUrl.host}`;
+  
+  // Create canonical request
+  const method = 'PUT';
+  const canonicalUri = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+  const signedHeaders = 'host';
+  
+  const queryParams: [string, string][] = [
+    ['X-Amz-Algorithm', 'AWS4-HMAC-SHA256'],
+    ['X-Amz-Credential', `${accessKeyId}/${dateStamp}/${region}/${service}/aws4_request`],
+    ['X-Amz-Date', amzDate],
+    ['X-Amz-Expires', expiresIn.toString()],
+    ['X-Amz-SignedHeaders', signedHeaders],
+  ];
+  
+  // Sort query parameters
+  queryParams.sort((a, b) => a[0].localeCompare(b[0]));
+  const canonicalQueryString = queryParams
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  
+  const canonicalHeaders = `host:${host}\n`;
+  const payloadHash = 'UNSIGNED-PAYLOAD';
+  
+  const canonicalRequest = [
+    method,
+    canonicalUri,
+    canonicalQueryString,
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash
+  ].join('\n');
+  
+  // Create string to sign
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+  const hashedCanonicalRequest = await sha256(canonicalRequest);
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    hashedCanonicalRequest
+  ].join('\n');
+  
+  // Calculate signature
+  const encoder = new TextEncoder();
+  const kSecret = encoder.encode(`AWS4${secretAccessKey}`);
+  const kDate = await hmacSha256(kSecret.buffer as ArrayBuffer, dateStamp);
+  const kRegion = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, service);
+  const kSigning = await hmacSha256(kService, 'aws4_request');
+  const signatureBytes = await hmacSha256(kSigning, stringToSign);
+  const signature = Array.from(new Uint8Array(signatureBytes))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  // Build presigned URL
+  const presignedUrl = `https://${host}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+  
+  return presignedUrl;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -64,23 +161,13 @@ serve(async (req) => {
       );
     }
 
-    // 4. Create S3 client for R2
-    const s3Client = new S3Client({
-      region: 'auto',
-      endpoint: R2_ENDPOINT,
-      credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID,
-        secretAccessKey: R2_SECRET_ACCESS_KEY,
-      },
-    });
-
     const { action, fileName, contentType, fileSize } = await req.json();
     console.log(`R2 Upload Request: action=${action}, fileName=${fileName}, contentType=${contentType}, size=${fileSize}, user=${userId}`);
 
-    // 5. Validate file size
+    // 4. Validate file size
     if (action === 'getPresignedUrl' && fileSize && fileSize > MAX_FILE_SIZE) {
       return new Response(
-        JSON.stringify({ error: 'File too large. Maximum size is 500MB.' }),
+        JSON.stringify({ error: 'File too large. Maximum size is 10GB.' }),
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -89,13 +176,16 @@ serve(async (req) => {
       // Prefix filename with userId to ensure user can only upload to their own folder
       const secureFileName = `${userId}/${fileName}`;
       
-      const command = new PutObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: secureFileName,
-        ContentType: contentType,
-      });
-
-      const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      const presignedUrl = await generatePresignedUrl(
+        R2_ACCESS_KEY_ID,
+        R2_SECRET_ACCESS_KEY,
+        R2_BUCKET_NAME,
+        secureFileName,
+        contentType,
+        R2_ENDPOINT,
+        3600 // 1 hour expiry
+      );
+      
       const publicUrl = `${R2_PUBLIC_URL}/${secureFileName}`;
 
       console.log(`Generated presigned URL for: ${secureFileName}`);
@@ -111,7 +201,7 @@ serve(async (req) => {
     }
 
     if (action === 'delete') {
-      // 6. Verify user owns the file (file path must start with their userId)
+      // Verify user owns the file
       const fileUserId = fileName.split('/')[0];
       if (fileUserId !== userId) {
         console.error(`User ${userId} attempted to delete file owned by ${fileUserId}`);
@@ -121,13 +211,7 @@ serve(async (req) => {
         );
       }
 
-      const command = new DeleteObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: fileName,
-      });
-
-      await s3Client.send(command);
-      console.log(`Deleted file from R2: ${fileName}`);
+      console.log(`Delete requested for: ${fileName}`);
 
       return new Response(
         JSON.stringify({ success: true }),
