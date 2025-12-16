@@ -30,6 +30,17 @@ async function hmacSha256(key: ArrayBuffer, data: string): Promise<ArrayBuffer> 
   return await crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(data));
 }
 
+// URL-safe encode for path segments
+function encodePathSegment(segment: string): string {
+  return encodeURIComponent(segment)
+    .replace(/%2F/g, '/')
+    .replace(/\!/g, '%21')
+    .replace(/\'/g, '%27')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29')
+    .replace(/\*/g, '%2A');
+}
+
 // Generate AWS Signature V4 Presigned URL for R2
 async function generatePresignedUrl(
   accessKeyId: string,
@@ -52,8 +63,13 @@ async function generatePresignedUrl(
   
   // Create canonical request
   const method = 'PUT';
-  const canonicalUri = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
-  const signedHeaders = 'host';
+  
+  // Properly encode the key for the URL path
+  const encodedKey = key.split('/').map(segment => encodeURIComponent(segment)).join('/');
+  const canonicalUri = `/${encodedKey}`;
+  
+  // Include content-type in signed headers for PUT requests
+  const signedHeaders = 'content-type;host';
   
   const queryParams: [string, string][] = [
     ['X-Amz-Algorithm', 'AWS4-HMAC-SHA256'],
@@ -69,7 +85,8 @@ async function generatePresignedUrl(
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
   
-  const canonicalHeaders = `host:${host}\n`;
+  // Headers must be in alphabetical order and lowercase
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\n`;
   const payloadHash = 'UNSIGNED-PAYLOAD';
   
   const canonicalRequest = [
@@ -80,6 +97,8 @@ async function generatePresignedUrl(
     signedHeaders,
     payloadHash
   ].join('\n');
+  
+  console.log('Canonical Request:', canonicalRequest);
   
   // Create string to sign
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
@@ -105,6 +124,8 @@ async function generatePresignedUrl(
   
   // Build presigned URL
   const presignedUrl = `https://${host}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+  
+  console.log('Generated Presigned URL (length):', presignedUrl.length);
   
   return presignedUrl;
 }
@@ -154,7 +175,13 @@ serve(async (req) => {
     const R2_PUBLIC_URL = Deno.env.get('R2_PUBLIC_URL');
 
     if (!R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME || !R2_ENDPOINT || !R2_PUBLIC_URL) {
-      console.error('Missing R2 configuration');
+      console.error('Missing R2 configuration', {
+        hasAccessKey: !!R2_ACCESS_KEY_ID,
+        hasSecretKey: !!R2_SECRET_ACCESS_KEY,
+        hasBucket: !!R2_BUCKET_NAME,
+        hasEndpoint: !!R2_ENDPOINT,
+        hasPublicUrl: !!R2_PUBLIC_URL
+      });
       return new Response(
         JSON.stringify({ error: 'R2 storage not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -173,8 +200,15 @@ serve(async (req) => {
     }
 
     if (action === 'getPresignedUrl') {
+      // Sanitize filename - remove special characters but keep extensions
+      const sanitizedFileName = fileName
+        .replace(/[^a-zA-Z0-9._\-\/]/g, '_')
+        .replace(/_+/g, '_');
+      
       // Prefix filename with userId to ensure user can only upload to their own folder
-      const secureFileName = `${userId}/${fileName}`;
+      const secureFileName = `${userId}/${sanitizedFileName}`;
+      
+      console.log(`Generating presigned URL for file: ${secureFileName}`);
       
       const presignedUrl = await generatePresignedUrl(
         R2_ACCESS_KEY_ID,
@@ -194,7 +228,8 @@ serve(async (req) => {
         JSON.stringify({ 
           presignedUrl, 
           publicUrl,
-          fileName: secureFileName 
+          fileName: secureFileName,
+          contentType: contentType // Return the content type that was signed
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

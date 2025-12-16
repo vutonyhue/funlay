@@ -69,18 +69,23 @@ export function useR2Upload(options: UseR2UploadOptions = {}) {
         };
 
         xhr.onload = () => {
+          console.log('XHR upload response:', xhr.status, xhr.statusText, xhr.responseText);
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve();
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+            reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.statusText} - ${xhr.responseText}`));
           }
         };
 
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.ontimeout = () => reject(new Error("Upload timed out"));
+        xhr.onerror = (e) => {
+          console.error("XHR Network error:", e);
+          reject(new Error("Network error during upload. Vui lòng kiểm tra kết nối mạng và thử lại."));
+        };
+        xhr.ontimeout = () => reject(new Error("Upload timed out after 10 minutes"));
 
         xhr.open('PUT', presignData.presignedUrl);
-        xhr.setRequestHeader('Content-Type', file.type);
+        // Use the exact content type that was signed
+        xhr.setRequestHeader('Content-Type', presignData.contentType || file.type);
         xhr.timeout = 600000; // 10 minutes
         xhr.send(file);
       });
