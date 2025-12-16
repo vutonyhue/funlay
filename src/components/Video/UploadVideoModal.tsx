@@ -10,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useR2Upload } from "@/hooks/useR2Upload";
-import { Upload as UploadIcon, CheckCircle, Plus, Music, Sparkles } from "lucide-react";
+import { Upload as UploadIcon, CheckCircle, Plus, Music } from "lucide-react";
 
 interface MeditationPlaylist {
   id: string;
@@ -44,13 +43,6 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { uploadToR2, uploading: r2Uploading, progress: r2Progress } = useR2Upload({
-    onProgress: (progress) => {
-      // Map R2 progress to our upload progress (10-85%)
-      const mappedProgress = 10 + (progress.percentage * 0.75);
-      setUploadProgress(mappedProgress);
-    }
-  });
 
   // Fetch user's meditation playlists when meditation checkbox is checked
   useEffect(() => {
@@ -213,33 +205,76 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
 
       let videoUrl = youtubeUrl;
 
-      // Upload video file to R2 if provided
+      // Upload video file if provided
       if (videoFile) {
-        setUploadStage(`✨ Đang lưu video vào vũ trụ ánh sáng... (${(videoFile.size / (1024 * 1024 * 1024)).toFixed(2)} GB)`);
+        setUploadStage(`Đang tải video lên... (${(videoFile.size / (1024 * 1024 * 1024)).toFixed(2)} GB)`);
         setUploadProgress(10);
 
-        const result = await uploadToR2(videoFile, `videos/${Date.now()}-${videoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_").substring(0, 50)}`);
-        
-        if (!result) {
-          throw new Error("Không thể tải video lên R2");
+        const sanitizedVideoName = videoFile.name
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .substring(0, 100);
+        const videoPath = `${user.id}/${Date.now()}-${sanitizedVideoName}`;
+
+        let uploadSuccess = false;
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        while (!uploadSuccess && retryCount < maxRetries) {
+          try {
+            setUploadProgress(10 + retryCount * 5);
+
+            const { error: videoUploadError } = await supabase.storage
+              .from("videos")
+              .upload(videoPath, videoFile, {
+                cacheControl: "3600",
+                upsert: false,
+              });
+
+            if (videoUploadError) {
+              throw videoUploadError;
+            }
+
+            uploadSuccess = true;
+            setUploadProgress(85);
+          } catch (error: any) {
+            retryCount++;
+            console.error(`Upload attempt ${retryCount} failed:`, error);
+
+            if (retryCount >= maxRetries) {
+              throw new Error(`Lỗi tải video sau ${maxRetries} lần thử: ${error.message}`);
+            }
+
+            setUploadStage(`Đang thử lại... (Lần ${retryCount}/${maxRetries})`);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          }
         }
 
-        videoUrl = result.publicUrl;
-        console.log("✨ Video uploaded to R2:", videoUrl);
-        setUploadProgress(85);
+        if (!uploadSuccess) {
+          throw new Error("Không thể tải video lên sau nhiều lần thử");
+        }
+
+        const { data: videoUrlData } = supabase.storage.from("videos").getPublicUrl(videoPath);
+        videoUrl = videoUrlData.publicUrl;
       }
 
-      // Upload thumbnail to R2
+      // Upload thumbnail
       let thumbnailUrl = null;
       if (thumbnailFile) {
-        setUploadStage("✨ Đang lưu thumbnail vào vũ trụ...");
+        setUploadStage("Đang tải thumbnail...");
         setUploadProgress(87);
 
-        const thumbResult = await uploadToR2(thumbnailFile, `thumbnails/${Date.now()}-${thumbnailFile.name.replace(/[^a-zA-Z0-9._-]/g, "_").substring(0, 50)}`);
-        
-        if (thumbResult) {
-          thumbnailUrl = thumbResult.publicUrl;
-          console.log("✨ Thumbnail uploaded to R2:", thumbnailUrl);
+        const sanitizedThumbName = thumbnailFile.name
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .substring(0, 100);
+        const thumbnailPath = `${user.id}/${Date.now()}-${sanitizedThumbName}`;
+
+        const { error: thumbnailUploadError } = await supabase.storage
+          .from("thumbnails")
+          .upload(thumbnailPath, thumbnailFile);
+
+        if (!thumbnailUploadError) {
+          const { data: thumbUrl } = supabase.storage.from("thumbnails").getPublicUrl(thumbnailPath);
+          thumbnailUrl = thumbUrl.publicUrl;
         }
       }
 
@@ -558,26 +593,18 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
             )}
           </div>
 
-          {/* Upload Progress with beautiful R2 styling */}
+          {/* Upload Progress */}
           {uploading && (
-            <div className="space-y-3 p-4 bg-gradient-to-r from-cyan-50 to-amber-50 rounded-lg border border-cyan-200">
+            <div className="space-y-3 p-4 bg-muted rounded-lg">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-cyan-500 animate-pulse" />
-                  <span className="text-sm font-medium bg-gradient-to-r from-cyan-600 to-amber-600 bg-clip-text text-transparent">
-                    {uploadStage}
-                  </span>
-                </div>
-                <span className="text-sm font-bold text-amber-600">{uploadProgress}%</span>
+                <span className="text-sm font-medium text-foreground">{uploadStage}</span>
+                <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
               </div>
-              <Progress value={uploadProgress} className="h-2 bg-cyan-100 [&>div]:bg-gradient-to-r [&>div]:from-cyan-500 [&>div]:to-amber-500" />
-              <p className="text-xs text-cyan-600 italic">
-                ✨ Bé thiên thần đang bay quanh lưu video vào vũ trụ ánh sáng Cloudflare R2...
-              </p>
+              <Progress value={uploadProgress} className="h-2" />
               {uploadProgress === 100 && (
                 <div className="flex items-center gap-2 text-green-600">
                   <CheckCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">🎉 Hoàn thành! Video đã lưu vào R2 vĩnh viễn!</span>
+                  <span className="text-sm">Đang làm mới trang...</span>
                 </div>
               )}
             </div>
