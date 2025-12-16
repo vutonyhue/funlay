@@ -205,7 +205,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Homepage background image */}
+      {/* Homepage background image - Enhanced 8K brightness and sharpness */}
       <div 
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
@@ -213,9 +213,69 @@ const Index = () => {
           backgroundPosition: 'bottom right',
           backgroundRepeat: 'no-repeat',
           backgroundSize: 'auto 80%',
-          opacity: 0.6,
+          opacity: 0.9,
+          filter: 'brightness(1.3) contrast(1.15) saturate(1.2)',
+          imageRendering: 'crisp-edges',
         }}
       />
+      
+      {/* Golden twinkling stars overlay */}
+      <div className="fixed inset-0 pointer-events-none z-[1]">
+        {/* Large golden stars */}
+        {[...Array(25)].map((_, i) => (
+          <div
+            key={`star-large-${i}`}
+            className="absolute rounded-full animate-pulse"
+            style={{
+              width: `${3 + Math.random() * 3}px`,
+              height: `${3 + Math.random() * 3}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              background: 'radial-gradient(circle, #FFD700 0%, #FFA500 50%, transparent 100%)',
+              boxShadow: '0 0 15px 5px rgba(255, 215, 0, 0.8), 0 0 30px 10px rgba(255, 165, 0, 0.5)',
+              animation: `twinkle ${1.5 + Math.random() * 2}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 3}s`,
+            }}
+          />
+        ))}
+        
+        {/* Medium golden stars */}
+        {[...Array(40)].map((_, i) => (
+          <div
+            key={`star-medium-${i}`}
+            className="absolute rounded-full"
+            style={{
+              width: `${2 + Math.random() * 2}px`,
+              height: `${2 + Math.random() * 2}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              background: 'radial-gradient(circle, #FFEC8B 0%, #FFD700 60%, transparent 100%)',
+              boxShadow: '0 0 10px 3px rgba(255, 236, 139, 0.9), 0 0 20px 6px rgba(255, 215, 0, 0.6)',
+              animation: `twinkle ${1 + Math.random() * 1.5}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 2}s`,
+            }}
+          />
+        ))}
+        
+        {/* Small sparkle stars */}
+        {[...Array(50)].map((_, i) => (
+          <div
+            key={`star-small-${i}`}
+            className="absolute rounded-full"
+            style={{
+              width: `${1 + Math.random() * 1.5}px`,
+              height: `${1 + Math.random() * 1.5}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              background: '#FFFACD',
+              boxShadow: '0 0 6px 2px rgba(255, 250, 205, 0.95), 0 0 12px 4px rgba(255, 215, 0, 0.7)',
+              animation: `sparkle ${0.8 + Math.random() * 1.2}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 1.5}s`,
+            }}
+          />
+        ))}
+      </div>
+
       {/* Floating rainbow particles - Heavenly divine light rays */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-glow-sapphire rounded-full particle opacity-80 blur-sm shadow-[0_0_25px_rgba(0,102,255,0.9)]" />
