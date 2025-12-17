@@ -254,7 +254,7 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
           xhr.ontimeout = () => reject(new Error("Upload timeout"));
           
           xhr.open('PUT', videoPresign.presignedUrl);
-          xhr.setRequestHeader('Content-Type', videoFile.type);
+          // Don't set Content-Type for presigned URL - R2 handles it
           xhr.timeout = 600000; // 10 minutes
           xhr.send(videoFile);
         });
@@ -289,7 +289,6 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
           const thumbResponse = await fetch(thumbPresign.presignedUrl, {
             method: 'PUT',
             body: thumbnailFile,
-            headers: { 'Content-Type': thumbnailFile.type },
           });
           
           if (thumbResponse.ok) {
