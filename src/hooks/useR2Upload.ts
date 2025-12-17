@@ -37,25 +37,20 @@ export function useR2Upload(options: UseR2UploadOptions = {}) {
       const fileName = customFileName || 
         `${options.folder || 'uploads'}/${Date.now()}-${sanitizedName}`;
 
-      // Get presigned URL from edge function
-      const { data: presignData, error: presignError } = await supabase.functions.invoke('r2-upload', {
-        body: {
-          action: 'getPresignedUrl',
-          fileName,
-          contentType: file.type,
-          fileSize: file.size,
-        }
-      });
+      // Use proxy upload through edge function
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', fileName);
 
-      if (presignError || !presignData?.presignedUrl) {
-        console.error("Presign error:", presignError, presignData);
-        throw new Error(presignData?.error || "Failed to get upload URL");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Authentication required");
       }
 
-      // Upload directly to R2 using presigned URL with progress tracking
+      // Upload with progress tracking using XMLHttpRequest
       const xhr = new XMLHttpRequest();
       
-      const uploadPromise = new Promise<void>((resolve, reject) => {
+      const result = await new Promise<{ publicUrl: string; fileName: string }>((resolve, reject) => {
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
             const uploadProgress = {
@@ -70,29 +65,43 @@ export function useR2Upload(options: UseR2UploadOptions = {}) {
 
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (response.publicUrl) {
+                resolve({
+                  publicUrl: response.publicUrl,
+                  fileName: response.fileName,
+                });
+              } else {
+                reject(new Error(response.error || 'Upload failed'));
+              }
+            } catch {
+              reject(new Error('Invalid response from server'));
+            }
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+            try {
+              const error = JSON.parse(xhr.responseText);
+              reject(new Error(error.error || `Upload failed: ${xhr.status}`));
+            } catch {
+              reject(new Error(`Upload failed: ${xhr.status}`));
+            }
           }
         };
 
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.ontimeout = () => reject(new Error("Upload timed out"));
+        xhr.onerror = () => reject(new Error("Lỗi mạng khi upload"));
+        xhr.ontimeout = () => reject(new Error("Upload timeout"));
 
-        xhr.open('PUT', presignData.presignedUrl);
-        xhr.setRequestHeader('Content-Type', file.type);
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/r2-upload`;
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+        xhr.setRequestHeader('apikey', import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
         xhr.timeout = 600000; // 10 minutes
-        xhr.send(file);
+        xhr.send(formData);
       });
 
-      await uploadPromise;
+      console.log("R2 Upload successful:", result.publicUrl);
 
-      console.log("R2 Upload successful:", presignData.publicUrl);
-
-      return {
-        publicUrl: presignData.publicUrl,
-        fileName: presignData.fileName,
-      };
+      return result;
 
     } catch (error: any) {
       console.error("R2 Upload error:", error);

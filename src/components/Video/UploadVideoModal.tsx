@@ -205,96 +205,63 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
 
       let videoUrl = youtubeUrl;
 
-      // Upload video file to R2 if provided
+      // Upload video file to Supabase Storage if provided
       if (videoFile) {
-        setUploadStage(`Đang tải video lên R2... (${(videoFile.size / (1024 * 1024 * 1024)).toFixed(2)} GB)`);
+        setUploadStage(`Đang tải video lên... (${(videoFile.size / (1024 * 1024)).toFixed(1)} MB)`);
         setUploadProgress(10);
 
         const sanitizedVideoName = videoFile.name
           .replace(/[^a-zA-Z0-9._-]/g, "_")
           .substring(0, 100);
-        const videoFileName = `videos/${Date.now()}-${sanitizedVideoName}`;
+        const videoFileName = `${user.id}/${Date.now()}-${sanitizedVideoName}`;
 
-        // Get presigned URL from R2
-        const { data: videoPresign, error: videoPresignError } = await supabase.functions.invoke('r2-upload', {
-          body: {
-            action: 'getPresignedUrl',
-            fileName: videoFileName,
-            contentType: videoFile.type,
-            fileSize: videoFile.size,
-          }
-        });
+        // Upload to Supabase Storage with progress tracking using tus protocol for large files
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('videos')
+          .upload(videoFileName, videoFile, {
+            cacheControl: '3600',
+            upsert: false,
+          });
 
-        if (videoPresignError || !videoPresign?.presignedUrl) {
-          console.error('R2 presign error:', videoPresignError, videoPresign);
-          throw new Error(videoPresign?.error || "Không thể lấy URL upload video từ R2");
+        if (uploadError) {
+          console.error('Video upload error:', uploadError);
+          throw new Error(`Lỗi tải video: ${uploadError.message}`);
         }
 
-        // Upload to R2 with progress tracking
-        const uploadPromise = new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-              const percentage = Math.round((event.loaded / event.total) * 75) + 10;
-              setUploadProgress(percentage);
-              setUploadStage(`Đang tải video lên R2... ${Math.round((event.loaded / event.total) * 100)}%`);
-            }
-          };
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('videos')
+          .getPublicUrl(videoFileName);
 
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve();
-            } else {
-              reject(new Error(`Upload R2 thất bại: ${xhr.status}`));
-            }
-          };
-
-          xhr.onerror = () => reject(new Error("Lỗi mạng khi upload R2"));
-          xhr.ontimeout = () => reject(new Error("Upload timeout"));
-          
-          xhr.open('PUT', videoPresign.presignedUrl);
-          // Don't set Content-Type for presigned URL - R2 handles it
-          xhr.timeout = 600000; // 10 minutes
-          xhr.send(videoFile);
-        });
-
-        await uploadPromise;
+        videoUrl = publicUrlData.publicUrl;
         setUploadProgress(85);
-        videoUrl = videoPresign.publicUrl;
-        console.log('Video uploaded to R2:', videoUrl);
+        console.log('Video uploaded:', videoUrl);
       }
 
-      // Upload thumbnail to R2
+      // Upload thumbnail to Supabase Storage
       let thumbnailUrl = null;
       if (thumbnailFile) {
-        setUploadStage("Đang tải thumbnail lên R2...");
+        setUploadStage("Đang tải thumbnail...");
         setUploadProgress(87);
 
         const sanitizedThumbName = thumbnailFile.name
           .replace(/[^a-zA-Z0-9._-]/g, "_")
           .substring(0, 100);
-        const thumbnailFileName = `thumbnails/${Date.now()}-${sanitizedThumbName}`;
+        const thumbnailFileName = `${user.id}/${Date.now()}-${sanitizedThumbName}`;
 
-        const { data: thumbPresign } = await supabase.functions.invoke('r2-upload', {
-          body: {
-            action: 'getPresignedUrl',
-            fileName: thumbnailFileName,
-            contentType: thumbnailFile.type,
-            fileSize: thumbnailFile.size,
-          }
-        });
-
-        if (thumbPresign?.presignedUrl) {
-          const thumbResponse = await fetch(thumbPresign.presignedUrl, {
-            method: 'PUT',
-            body: thumbnailFile,
+        const { data: thumbData, error: thumbError } = await supabase.storage
+          .from('thumbnails')
+          .upload(thumbnailFileName, thumbnailFile, {
+            cacheControl: '3600',
+            upsert: false,
           });
-          
-          if (thumbResponse.ok) {
-            thumbnailUrl = thumbPresign.publicUrl;
-            console.log('Thumbnail uploaded to R2:', thumbnailUrl);
-          }
+
+        if (!thumbError && thumbData) {
+          const { data: thumbPublicUrl } = supabase.storage
+            .from('thumbnails')
+            .getPublicUrl(thumbnailFileName);
+          thumbnailUrl = thumbPublicUrl.publicUrl;
+          console.log('Thumbnail uploaded:', thumbnailUrl);
         }
       }
 

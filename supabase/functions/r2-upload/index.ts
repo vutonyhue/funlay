@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Maximum file size: 10GB
-const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024;
+// Maximum file size: 500MB for proxy upload
+const MAX_PROXY_SIZE = 500 * 1024 * 1024;
 
 // Helper function to create HMAC-SHA256 signature
 async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
@@ -40,17 +40,18 @@ async function getSignatureKey(secretKey: string, dateStamp: string, region: str
   return kSigning;
 }
 
-async function generatePresignedUrl(
+async function generateAuthHeaders(
   accessKeyId: string,
   secretAccessKey: string,
   bucket: string,
   key: string,
   endpoint: string,
-  expiresIn: number = 3600
-): Promise<string> {
+  method: string,
+  contentType: string,
+  payloadHash: string
+): Promise<{ headers: Record<string, string>, url: string }> {
   const region = 'auto';
   const service = 's3';
-  const method = 'PUT';
   
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '').substring(0, 15) + 'Z';
@@ -59,32 +60,20 @@ async function generatePresignedUrl(
   const endpointUrl = new URL(endpoint);
   const host = `${bucket}.${endpointUrl.hostname}`;
   const canonicalUri = '/' + encodeURIComponent(key).replace(/%2F/g, '/');
+  const url = `https://${host}${canonicalUri}`;
   
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
-  const credential = `${accessKeyId}/${credentialScope}`;
   
-  const queryParams = new URLSearchParams({
-    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
-    'X-Amz-Credential': credential,
-    'X-Amz-Date': amzDate,
-    'X-Amz-Expires': expiresIn.toString(),
-    'X-Amz-SignedHeaders': 'host',
-  });
-  
-  // Sort query parameters
-  const sortedParams = Array.from(queryParams.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  const canonicalQueryString = sortedParams.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
-  
-  const canonicalHeaders = `host:${host}\n`;
-  const signedHeaders = 'host';
+  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
   
   const canonicalRequest = [
     method,
     canonicalUri,
-    canonicalQueryString,
+    '', // empty query string
     canonicalHeaders,
     signedHeaders,
-    'UNSIGNED-PAYLOAD'
+    payloadHash
   ].join('\n');
   
   const hashedCanonicalRequest = await sha256(canonicalRequest);
@@ -99,7 +88,18 @@ async function generatePresignedUrl(
   const signingKey = await getSignatureKey(secretAccessKey, dateStamp, region, service);
   const signature = toHex(await hmacSha256(signingKey, stringToSign));
   
-  return `https://${host}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+  const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  
+  return {
+    url,
+    headers: {
+      'Authorization': authorizationHeader,
+      'x-amz-date': amzDate,
+      'x-amz-content-sha256': payloadHash,
+      'Content-Type': contentType,
+      'Host': host
+    }
+  };
 }
 
 serve(async (req) => {
@@ -154,47 +154,88 @@ serve(async (req) => {
       );
     }
 
-    const { action, fileName, contentType, fileSize } = await req.json();
-    console.log(`R2 Upload Request: action=${action}, fileName=${fileName}, contentType=${contentType}, size=${fileSize}, user=${userId}`);
-
-    // 4. Validate file size
-    if (action === 'getPresignedUrl' && fileSize && fileSize > MAX_FILE_SIZE) {
-      return new Response(
-        JSON.stringify({ error: 'File too large. Maximum size is 10GB.' }),
-        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (action === 'getPresignedUrl') {
-      // Prefix filename with userId to ensure user can only upload to their own folder
-      const secureFileName = `${userId}/${fileName}`;
+    const contentType = req.headers.get('content-type') || '';
+    
+    // Check if this is a multipart form data upload (proxy upload)
+    if (contentType.includes('multipart/form-data')) {
+      console.log('Processing proxy upload...');
       
-      // Generate presigned URL using native crypto
-      const presignedUrl = await generatePresignedUrl(
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      const fileName = formData.get('fileName') as string;
+      
+      if (!file || !fileName) {
+        return new Response(
+          JSON.stringify({ error: 'Missing file or fileName' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (file.size > MAX_PROXY_SIZE) {
+        return new Response(
+          JSON.stringify({ error: 'File too large for proxy upload. Maximum 500MB.' }),
+          { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const secureFileName = `${userId}/${fileName}`;
+      const fileArrayBuffer = await file.arrayBuffer();
+      const fileBytes = new Uint8Array(fileArrayBuffer);
+      
+      // Calculate payload hash
+      const payloadHash = await sha256(new TextDecoder().decode(fileBytes));
+      
+      // For binary files, use UNSIGNED-PAYLOAD
+      const { url, headers } = await generateAuthHeaders(
         R2_ACCESS_KEY_ID,
         R2_SECRET_ACCESS_KEY,
         R2_BUCKET_NAME,
         secureFileName,
         R2_ENDPOINT,
-        3600
+        'PUT',
+        file.type || 'application/octet-stream',
+        'UNSIGNED-PAYLOAD'
       );
       
+      console.log(`Uploading to R2: ${url}`);
+      
+      // Upload to R2
+      const r2Response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          ...headers,
+          'x-amz-content-sha256': 'UNSIGNED-PAYLOAD'
+        },
+        body: fileBytes
+      });
+      
+      if (!r2Response.ok) {
+        const errorText = await r2Response.text();
+        console.error('R2 upload failed:', r2Response.status, errorText);
+        return new Response(
+          JSON.stringify({ error: `R2 upload failed: ${r2Response.status}` }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       const publicUrl = `${R2_PUBLIC_URL}/${secureFileName}`;
-
-      console.log(`Generated presigned URL for: ${secureFileName}`);
-
+      console.log(`Upload successful: ${publicUrl}`);
+      
       return new Response(
         JSON.stringify({ 
-          presignedUrl, 
+          success: true,
           publicUrl,
           fileName: secureFileName 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    // JSON request for presigned URL or delete
+    const { action, fileName, contentType: fileContentType, fileSize } = await req.json();
+    console.log(`R2 Request: action=${action}, fileName=${fileName}, contentType=${fileContentType}, size=${fileSize}, user=${userId}`);
 
     if (action === 'delete') {
-      // For delete, we need to make a direct request to R2
       const fileUserId = fileName.split('/')[0];
       if (fileUserId !== userId) {
         console.error(`User ${userId} attempted to delete file owned by ${fileUserId}`);
@@ -204,13 +245,27 @@ serve(async (req) => {
         );
       }
 
-      // Generate delete presigned URL and execute
-      const endpointUrl = new URL(R2_ENDPOINT);
-      const host = `${R2_BUCKET_NAME}.${endpointUrl.hostname}`;
-      const deleteUrl = `https://${host}/${fileName}`;
+      // Generate delete request
+      const { url, headers } = await generateAuthHeaders(
+        R2_ACCESS_KEY_ID,
+        R2_SECRET_ACCESS_KEY,
+        R2_BUCKET_NAME,
+        fileName,
+        R2_ENDPOINT,
+        'DELETE',
+        '',
+        'UNSIGNED-PAYLOAD'
+      );
       
-      // For now, just return success - delete will be implemented later if needed
-      console.log(`Delete requested for: ${fileName}`);
+      const deleteResponse = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          ...headers,
+          'x-amz-content-sha256': 'UNSIGNED-PAYLOAD'
+        }
+      });
+      
+      console.log(`Delete response: ${deleteResponse.status}`);
 
       return new Response(
         JSON.stringify({ success: true }),
@@ -219,7 +274,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ error: 'Invalid action' }),
+      JSON.stringify({ error: 'Invalid action. Use multipart form data for uploads.' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
