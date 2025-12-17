@@ -1,15 +1,13 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.632.0";
-import { getSignedUrl } from "https://esm.sh/@aws-sdk/s3-request-presigner@3.632.0";
+import { S3Client } from "https://deno.land/x/s3_lite_client@0.7.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Maximum file size: 10GB (matches frontend limit)
+// Maximum file size: 10GB
 const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024;
 
 serve(async (req) => {
@@ -64,14 +62,19 @@ serve(async (req) => {
       );
     }
 
-    // 4. Create S3 client for R2
+    // Extract endpoint host (remove https:// if present)
+    const endpointUrl = new URL(R2_ENDPOINT);
+
+    // 4. Create S3 client for R2 using Deno-native library
     const s3Client = new S3Client({
+      endPoint: endpointUrl.hostname,
+      port: endpointUrl.port ? parseInt(endpointUrl.port) : 443,
+      useSSL: endpointUrl.protocol === 'https:',
       region: 'auto',
-      endpoint: R2_ENDPOINT,
-      credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID,
-        secretAccessKey: R2_SECRET_ACCESS_KEY,
-      },
+      accessKey: R2_ACCESS_KEY_ID,
+      secretKey: R2_SECRET_ACCESS_KEY,
+      bucket: R2_BUCKET_NAME,
+      pathStyle: false,
     });
 
     const { action, fileName, contentType, fileSize } = await req.json();
@@ -80,7 +83,7 @@ serve(async (req) => {
     // 5. Validate file size
     if (action === 'getPresignedUrl' && fileSize && fileSize > MAX_FILE_SIZE) {
       return new Response(
-        JSON.stringify({ error: 'File too large. Maximum size is 500MB.' }),
+        JSON.stringify({ error: 'File too large. Maximum size is 10GB.' }),
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -89,13 +92,11 @@ serve(async (req) => {
       // Prefix filename with userId to ensure user can only upload to their own folder
       const secureFileName = `${userId}/${fileName}`;
       
-      const command = new PutObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: secureFileName,
-        ContentType: contentType,
+      // Generate presigned URL for upload
+      const presignedUrl = await s3Client.getPresignedUrl('PUT', secureFileName, {
+        expirySeconds: 3600,
       });
-
-      const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      
       const publicUrl = `${R2_PUBLIC_URL}/${secureFileName}`;
 
       console.log(`Generated presigned URL for: ${secureFileName}`);
@@ -121,12 +122,7 @@ serve(async (req) => {
         );
       }
 
-      const command = new DeleteObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: fileName,
-      });
-
-      await s3Client.send(command);
+      await s3Client.deleteObject(fileName);
       console.log(`Deleted file from R2: ${fileName}`);
 
       return new Response(
