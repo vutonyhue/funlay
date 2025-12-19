@@ -47,6 +47,42 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          error_message: string | null
+          id: string
+          processed_at: string | null
+          status: string
+          tx_hash: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          status?: string
+          tx_hash?: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          status?: string
+          tx_hash?: string | null
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       comment_logs: {
         Row: {
           comment_id: string
@@ -526,6 +562,9 @@ export type Database = {
       reward_transactions: {
         Row: {
           amount: number
+          claim_tx_hash: string | null
+          claimed: boolean
+          claimed_at: string | null
           created_at: string
           id: string
           reward_type: string
@@ -536,6 +575,9 @@ export type Database = {
         }
         Insert: {
           amount: number
+          claim_tx_hash?: string | null
+          claimed?: boolean
+          claimed_at?: string | null
           created_at?: string
           id?: string
           reward_type: string
@@ -546,6 +588,9 @@ export type Database = {
         }
         Update: {
           amount?: number
+          claim_tx_hash?: string | null
+          claimed?: boolean
+          claimed_at?: string | null
           created_at?: string
           id?: string
           reward_type?: string
