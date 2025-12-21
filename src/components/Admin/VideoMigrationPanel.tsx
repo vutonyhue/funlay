@@ -7,6 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
   Cloud, 
   CloudUpload, 
   CheckCircle, 
@@ -15,7 +25,10 @@ import {
   Play, 
   RefreshCw,
   Database,
-  StopCircle
+  StopCircle,
+  Trash2,
+  HardDrive,
+  AlertTriangle
 } from "lucide-react";
 
 interface MigrationStats {
@@ -42,7 +55,29 @@ interface MigrationResult {
   error?: string;
 }
 
+interface StorageFile {
+  name: string;
+  size: number;
+  bucket: string;
+}
+
+interface StorageStats {
+  videosCount: number;
+  videosSize: number;
+  thumbnailsCount: number;
+  thumbnailsSize: number;
+  totalSize: number;
+}
+
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 const VideoMigrationPanel = () => {
   const [stats, setStats] = useState<MigrationStats | null>(null);
@@ -56,6 +91,15 @@ const VideoMigrationPanel = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const stopRequestedRef = useRef(false);
+  
+  // Cleanup states
+  const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
+  const [storageFiles, setStorageFiles] = useState<StorageFile[]>([]);
+  const [loadingStorage, setLoadingStorage] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const [cleanupProgress, setCleanupProgress] = useState({ current: 0, total: 0 });
+  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
+  const [cleanupResults, setCleanupResults] = useState<{ deleted: number; failed: number } | null>(null);
 
   const fetchStats = async () => {
     try {
@@ -84,9 +128,69 @@ const VideoMigrationPanel = () => {
     }
   };
 
+  // Fetch Supabase Storage stats
+  const fetchStorageStats = async () => {
+    setLoadingStorage(true);
+    try {
+      const buckets = ['videos', 'thumbnails'];
+      let videosCount = 0;
+      let videosSize = 0;
+      let thumbnailsCount = 0;
+      let thumbnailsSize = 0;
+      const allFiles: StorageFile[] = [];
+      
+      for (const bucket of buckets) {
+        const { data: files, error } = await supabase.storage
+          .from(bucket)
+          .list('', { limit: 1000 });
+        
+        if (error) {
+          console.error(`Error listing ${bucket}:`, error);
+          continue;
+        }
+        
+        if (files) {
+          for (const file of files) {
+            // Skip folders - they have null metadata
+            if (!file.metadata) continue;
+            
+            const fileSize = file.metadata?.size || 0;
+            allFiles.push({
+              name: file.name,
+              size: fileSize,
+              bucket
+            });
+            
+            if (bucket === 'videos') {
+              videosCount++;
+              videosSize += fileSize;
+            } else {
+              thumbnailsCount++;
+              thumbnailsSize += fileSize;
+            }
+          }
+        }
+      }
+      
+      setStorageFiles(allFiles);
+      setStorageStats({
+        videosCount,
+        videosSize,
+        thumbnailsCount,
+        thumbnailsSize,
+        totalSize: videosSize + thumbnailsSize
+      });
+    } catch (error: any) {
+      console.error('Error fetching storage stats:', error);
+      toast.error('Không thể tải thông tin storage');
+    } finally {
+      setLoadingStorage(false);
+    }
+  };
+
   const refreshData = async () => {
     setLoading(true);
-    await Promise.all([fetchStats(), fetchPendingVideos()]);
+    await Promise.all([fetchStats(), fetchPendingVideos(), fetchStorageStats()]);
     setLoading(false);
   };
 
@@ -423,6 +527,64 @@ const VideoMigrationPanel = () => {
     toast.info('Đang dừng migration...');
   };
 
+  // Cleanup Supabase Storage
+  const cleanupSupabaseStorage = async () => {
+    if (storageFiles.length === 0) {
+      toast.info('Không có file nào cần xóa');
+      return;
+    }
+
+    setCleaning(true);
+    setCleanupProgress({ current: 0, total: storageFiles.length });
+    setCleanupResults(null);
+
+    let deleted = 0;
+    let failed = 0;
+
+    // Group files by bucket
+    const videoFiles = storageFiles.filter(f => f.bucket === 'videos');
+    const thumbnailFiles = storageFiles.filter(f => f.bucket === 'thumbnails');
+
+    // Delete video files
+    for (let i = 0; i < videoFiles.length; i++) {
+      try {
+        const { error } = await supabase.storage
+          .from('videos')
+          .remove([videoFiles[i].name]);
+        
+        if (error) throw error;
+        deleted++;
+      } catch (err) {
+        console.error(`Failed to delete video: ${videoFiles[i].name}`, err);
+        failed++;
+      }
+      setCleanupProgress({ current: i + 1, total: storageFiles.length });
+    }
+
+    // Delete thumbnail files
+    for (let i = 0; i < thumbnailFiles.length; i++) {
+      try {
+        const { error } = await supabase.storage
+          .from('thumbnails')
+          .remove([thumbnailFiles[i].name]);
+        
+        if (error) throw error;
+        deleted++;
+      } catch (err) {
+        console.error(`Failed to delete thumbnail: ${thumbnailFiles[i].name}`, err);
+        failed++;
+      }
+      setCleanupProgress({ current: videoFiles.length + i + 1, total: storageFiles.length });
+    }
+
+    setCleaning(false);
+    setCleanupResults({ deleted, failed });
+    setShowCleanupDialog(false);
+    
+    toast.success(`Cleanup hoàn tất: ${deleted} đã xóa, ${failed} thất bại`);
+    await fetchStorageStats();
+  };
+
   const getStatusBadge = (videoId: string) => {
     const result = migrationResults.find(r => r.videoId === videoId);
     
@@ -438,6 +600,10 @@ const VideoMigrationPanel = () => {
     
     return <Badge variant="secondary">Chờ xử lý</Badge>;
   };
+
+  const cleanupProgressPercent = cleanupProgress.total > 0 
+    ? (cleanupProgress.current / cleanupProgress.total) * 100 
+    : 0;
 
   if (loading) {
     return (
@@ -630,6 +796,149 @@ const VideoMigrationPanel = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Cleanup Supabase Storage */}
+      <Card className="border-red-500/30">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-red-500">
+            <Trash2 className="w-5 h-5" />
+            Cleanup Supabase Storage
+          </CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchStorageStats}
+            disabled={loadingStorage || cleaning}
+          >
+            <RefreshCw className={`w-4 h-4 mr-1 ${loadingStorage ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Storage Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+              <div className="flex items-center gap-2 mb-1">
+                <HardDrive className="w-4 h-4 text-orange-500" />
+                <span className="text-sm font-medium">Videos</span>
+              </div>
+              <div className="text-lg font-bold">{storageStats?.videosCount || 0} files</div>
+              <div className="text-xs text-muted-foreground">{formatBytes(storageStats?.videosSize || 0)}</div>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+              <div className="flex items-center gap-2 mb-1">
+                <HardDrive className="w-4 h-4 text-purple-500" />
+                <span className="text-sm font-medium">Thumbnails</span>
+              </div>
+              <div className="text-lg font-bold">{storageStats?.thumbnailsCount || 0} files</div>
+              <div className="text-xs text-muted-foreground">{formatBytes(storageStats?.thumbnailsSize || 0)}</div>
+            </div>
+            
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 md:col-span-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Database className="w-4 h-4 text-red-500" />
+                <span className="text-sm font-medium">Tổng dung lượng Supabase</span>
+              </div>
+              <div className="text-xl font-bold text-red-500">{formatBytes(storageStats?.totalSize || 0)}</div>
+              <div className="text-xs text-muted-foreground">
+                {storageFiles.length} files sẵn sàng để xóa
+              </div>
+            </div>
+          </div>
+
+          {/* Cleanup Progress */}
+          {cleaning && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Đang xóa: {cleanupProgress.current}/{cleanupProgress.total}</span>
+                <span>{Math.round(cleanupProgressPercent)}%</span>
+              </div>
+              <Progress value={cleanupProgressPercent} className="h-2" />
+            </div>
+          )}
+
+          {/* Cleanup Results */}
+          {cleanupResults && (
+            <div className="p-3 rounded-lg bg-muted/50 flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              <span>
+                Đã xóa: <strong className="text-green-500">{cleanupResults.deleted}</strong> files
+                {cleanupResults.failed > 0 && (
+                  <>, Thất bại: <strong className="text-red-500">{cleanupResults.failed}</strong></>
+                )}
+              </span>
+            </div>
+          )}
+
+          {/* Warning & Action */}
+          {storageFiles.length > 0 ? (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <strong>Cảnh báo:</strong> Hành động này sẽ xóa vĩnh viễn {storageFiles.length} files khỏi Supabase Storage. 
+                  Hãy đảm bảo rằng tất cả videos đã được migrate sang R2 và đang hoạt động bình thường trước khi xóa.
+                </div>
+              </div>
+              
+              <Button 
+                variant="destructive"
+                onClick={() => setShowCleanupDialog(true)}
+                disabled={cleaning || migrating || pendingVideos.length > 0}
+                className="w-full"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Xóa {storageFiles.length} files ({formatBytes(storageStats?.totalSize || 0)})
+              </Button>
+              
+              {pendingVideos.length > 0 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  ⚠️ Hoàn thành migrate {pendingVideos.length} video(s) còn lại trước khi cleanup
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
+              <p>Supabase Storage đã trống!</p>
+              <p className="text-xs mt-1">Không có files nào cần xóa</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Cleanup Confirmation Dialog */}
+      <AlertDialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-500">
+              <AlertTriangle className="w-5 h-5" />
+              Xác nhận xóa Supabase Storage
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Bạn sắp xóa vĩnh viễn:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li><strong>{storageStats?.videosCount}</strong> video files ({formatBytes(storageStats?.videosSize || 0)})</li>
+                <li><strong>{storageStats?.thumbnailsCount}</strong> thumbnail files ({formatBytes(storageStats?.thumbnailsSize || 0)})</li>
+              </ul>
+              <p className="text-red-500 font-medium mt-2">
+                Hành động này KHÔNG thể hoàn tác. Đảm bảo rằng tất cả videos đang hoạt động từ R2.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={cleanupSupabaseStorage}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Xóa {storageFiles.length} files
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
