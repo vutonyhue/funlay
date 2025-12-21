@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useR2Upload } from "@/hooks/useR2Upload";
 import { Loader2, Upload } from "lucide-react";
 
 const ManageChannel = () => {
@@ -24,6 +25,7 @@ const ManageChannel = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { uploadToR2, uploading: r2Uploading } = useR2Upload({ folder: "banners" });
 
   useEffect(() => {
     if (!user) {
@@ -91,21 +93,15 @@ const ManageChannel = () => {
 
       let bannerUrl = currentBannerUrl;
 
-      // Upload new banner if provided
+      // Upload new banner to R2 if provided
       if (banner) {
-        const fileExt = banner.name.split(".").pop();
-        const fileName = `banner-${user?.id}-${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("thumbnails")
-          .upload(fileName, banner);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("thumbnails")
-          .getPublicUrl(fileName);
-
-        bannerUrl = publicUrl;
+        const result = await uploadToR2(banner, `banner-${user?.id}-${Date.now()}`);
+        if (result) {
+          bannerUrl = result.publicUrl;
+          console.log("Banner uploaded to R2:", bannerUrl);
+        } else {
+          throw new Error("Failed to upload banner to R2");
+        }
       }
 
       const { error } = await supabase
@@ -201,11 +197,11 @@ const ManageChannel = () => {
             <div className="flex gap-4">
               <Button
                 type="submit"
-                disabled={saving || !name.trim()}
+                disabled={saving || r2Uploading || !name.trim()}
                 className="flex-1"
               >
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Lưu thay đổi
+                {(saving || r2Uploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {r2Uploading ? "Đang tải banner..." : "Lưu thay đổi"}
               </Button>
               <Button
                 type="button"
