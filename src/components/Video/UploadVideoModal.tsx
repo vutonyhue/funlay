@@ -205,63 +205,197 @@ export function UploadVideoModal({ open, onOpenChange }: UploadVideoModalProps) 
 
       let videoUrl = youtubeUrl;
 
-      // Upload video file to Supabase Storage if provided
+      // Upload video file to Cloudflare R2 if provided
       if (videoFile) {
-        setUploadStage(`Đang tải video lên... (${(videoFile.size / (1024 * 1024)).toFixed(1)} MB)`);
+        const fileSizeMB = (videoFile.size / (1024 * 1024)).toFixed(1);
+        const fileSizeGB = (videoFile.size / (1024 * 1024 * 1024)).toFixed(2);
+        setUploadStage(`Đang tải video lên R2... (${videoFile.size > 1024 * 1024 * 1024 ? fileSizeGB + ' GB' : fileSizeMB + ' MB'})`);
         setUploadProgress(10);
 
         const sanitizedVideoName = videoFile.name
           .replace(/[^a-zA-Z0-9._-]/g, "_")
           .substring(0, 100);
-        const videoFileName = `${user.id}/${Date.now()}-${sanitizedVideoName}`;
+        const videoFileName = `videos/${Date.now()}-${sanitizedVideoName}`;
 
-        // Upload to Supabase Storage with progress tracking using tus protocol for large files
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('videos')
-          .upload(videoFileName, videoFile, {
-            cacheControl: '3600',
-            upsert: false,
+        // Check if multipart is needed (> 100MB)
+        if (videoFile.size > 100 * 1024 * 1024) {
+          // Multipart upload for large files
+          const { data: initData, error: initError } = await supabase.functions.invoke('r2-upload', {
+            body: {
+              action: 'initiateMultipart',
+              fileName: videoFileName,
+              contentType: videoFile.type,
+              fileSize: videoFile.size,
+            },
           });
 
-        if (uploadError) {
-          console.error('Video upload error:', uploadError);
-          throw new Error(`Lỗi tải video: ${uploadError.message}`);
+          if (initError || !initData?.uploadId) {
+            throw new Error('Không thể khởi tạo upload. Vui lòng thử lại.');
+          }
+
+          const { uploadId, publicUrl } = initData;
+          const CHUNK_SIZE = 100 * 1024 * 1024; // 100MB chunks
+          const totalParts = Math.ceil(videoFile.size / CHUNK_SIZE);
+          const uploadedParts: { partNumber: number; etag: string }[] = [];
+
+          for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+            const start = (partNumber - 1) * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, videoFile.size);
+            const chunk = videoFile.slice(start, end);
+
+            // Get presigned URL for this part
+            const { data: partData, error: partError } = await supabase.functions.invoke('r2-upload', {
+              body: {
+                action: 'getPartUrl',
+                fileName: videoFileName,
+                uploadId,
+                partNumber,
+              },
+            });
+
+            if (partError || !partData?.presignedUrl) {
+              throw new Error(`Lỗi tạo link upload phần ${partNumber}`);
+            }
+
+            // Upload part with retry
+            let retries = 0;
+            let partUploaded = false;
+
+            while (retries < 3 && !partUploaded) {
+              try {
+                const partResponse = await new Promise<{ etag: string }>((resolve, reject) => {
+                  const xhr = new XMLHttpRequest();
+
+                  xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                      const partProgress = (start + e.loaded) / videoFile.size;
+                      setUploadProgress(10 + Math.round(partProgress * 75));
+                      setUploadStage(`Đang tải phần ${partNumber}/${totalParts}...`);
+                    }
+                  };
+
+                  xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                      const etag = xhr.getResponseHeader('ETag') || `part-${partNumber}`;
+                      resolve({ etag: etag.replace(/"/g, '') });
+                    } else {
+                      reject(new Error(`Part ${partNumber} failed: ${xhr.status}`));
+                    }
+                  };
+
+                  xhr.onerror = () => reject(new Error('Network error'));
+                  xhr.ontimeout = () => reject(new Error('Timeout'));
+
+                  xhr.open('PUT', partData.presignedUrl);
+                  xhr.timeout = 10 * 60 * 1000;
+                  xhr.send(chunk);
+                });
+
+                uploadedParts.push({ partNumber, etag: partResponse.etag });
+                partUploaded = true;
+              } catch (err) {
+                retries++;
+                if (retries >= 3) throw err;
+                await new Promise(r => setTimeout(r, 2000 * retries));
+              }
+            }
+          }
+
+          // Complete multipart upload
+          setUploadStage('Đang hoàn tất upload...');
+          const { error: completeError } = await supabase.functions.invoke('r2-upload', {
+            body: {
+              action: 'completeMultipart',
+              fileName: videoFileName,
+              uploadId,
+              parts: uploadedParts,
+            },
+          });
+
+          if (completeError) {
+            throw new Error('Không thể hoàn tất upload');
+          }
+
+          videoUrl = publicUrl;
+        } else {
+          // Simple presigned URL upload for small files (< 100MB)
+          const { data: presignData, error: presignError } = await supabase.functions.invoke('r2-upload', {
+            body: {
+              action: 'getPresignedUrl',
+              fileName: videoFileName,
+              contentType: videoFile.type,
+              fileSize: videoFile.size,
+            },
+          });
+
+          if (presignError || !presignData?.presignedUrl) {
+            throw new Error('Không thể tạo link upload');
+          }
+
+          // Upload directly to R2 with progress tracking
+          await new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.onprogress = (e) => {
+              if (e.lengthComputable) {
+                setUploadProgress(10 + Math.round((e.loaded / e.total) * 75));
+              }
+            };
+
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) resolve();
+              else reject(new Error(`Upload failed: ${xhr.status}`));
+            };
+
+            xhr.onerror = () => reject(new Error('Lỗi mạng'));
+            xhr.ontimeout = () => reject(new Error('Timeout'));
+
+            xhr.open('PUT', presignData.presignedUrl);
+            xhr.timeout = 30 * 60 * 1000;
+            xhr.send(videoFile);
+          });
+
+          videoUrl = presignData.publicUrl;
         }
 
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('videos')
-          .getPublicUrl(videoFileName);
-
-        videoUrl = publicUrlData.publicUrl;
         setUploadProgress(85);
-        console.log('Video uploaded:', videoUrl);
+        console.log('Video uploaded to R2:', videoUrl);
       }
 
-      // Upload thumbnail to Supabase Storage
+      // Upload thumbnail to Cloudflare R2
       let thumbnailUrl = null;
       if (thumbnailFile) {
-        setUploadStage("Đang tải thumbnail...");
+        setUploadStage("Đang tải thumbnail lên R2...");
         setUploadProgress(87);
 
         const sanitizedThumbName = thumbnailFile.name
           .replace(/[^a-zA-Z0-9._-]/g, "_")
           .substring(0, 100);
-        const thumbnailFileName = `${user.id}/${Date.now()}-${sanitizedThumbName}`;
+        const thumbnailFileName = `thumbnails/${Date.now()}-${sanitizedThumbName}`;
 
-        const { data: thumbData, error: thumbError } = await supabase.storage
-          .from('thumbnails')
-          .upload(thumbnailFileName, thumbnailFile, {
-            cacheControl: '3600',
-            upsert: false,
-          });
+        const { data: thumbPresign, error: thumbPresignError } = await supabase.functions.invoke('r2-upload', {
+          body: {
+            action: 'getPresignedUrl',
+            fileName: thumbnailFileName,
+            contentType: thumbnailFile.type,
+            fileSize: thumbnailFile.size,
+          },
+        });
 
-        if (!thumbError && thumbData) {
-          const { data: thumbPublicUrl } = supabase.storage
-            .from('thumbnails')
-            .getPublicUrl(thumbnailFileName);
-          thumbnailUrl = thumbPublicUrl.publicUrl;
-          console.log('Thumbnail uploaded:', thumbnailUrl);
+        if (!thumbPresignError && thumbPresign?.presignedUrl) {
+          try {
+            const thumbResponse = await fetch(thumbPresign.presignedUrl, {
+              method: 'PUT',
+              body: thumbnailFile,
+            });
+
+            if (thumbResponse.ok) {
+              thumbnailUrl = thumbPresign.publicUrl;
+              console.log('Thumbnail uploaded to R2:', thumbnailUrl);
+            }
+          } catch (thumbErr) {
+            console.error('Thumbnail upload error:', thumbErr);
+          }
         }
       }
 
