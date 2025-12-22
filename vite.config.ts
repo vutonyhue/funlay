@@ -10,6 +10,15 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignore "use client" directive warnings from Web3 packages
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        warn(warning);
+      }
+    }
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
@@ -71,5 +80,6 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['viem', 'wagmi', '@wagmi/core', '@walletconnect/ethereum-provider']
   },
 }));
